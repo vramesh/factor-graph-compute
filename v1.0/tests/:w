@@ -1,0 +1,41 @@
+import unittest
+import mock
+from Pubsub import Publisher, Broker
+
+class TestPublisher(unittest.TestCase):
+    def setUp(self):
+        publisher_id = 0
+        broker = Broker()
+        self.broker = broker
+        self.publisher = Publisher(publisher_id, broker)
+    def tearDown(self): pass
+
+    def test_publish_success(self):
+        event = 'hello'
+        self.assertIsNone(self.publisher.publish(event))
+
+    def test_publish_event_is_none(self):
+        self.assertRaises(ValueError, self.publisher.publish, None)
+
+#    @mock.patch('self.Broker')
+    @mock.patch('Pubsub.Broker')
+    def test_register(self, mock_broker):
+        mock_broker.add_publisher.assert_called_with("invalid")
+
+class TestChannel(unittest.TestCase):
+    def setUp(self): pass
+    def tearDown(self): pass
+
+    def test_register(self): pass
+
+class TestSubscriber(unittest.TestCase):
+    def setUp(self): pass
+    def tearDown(self): pass
+
+    def test_subscribe(self): pass
+    def test_register(self): pass
+
+
+if __name__ == '__main__':
+    unittest.main()
+
