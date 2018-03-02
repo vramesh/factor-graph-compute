@@ -1,4 +1,4 @@
-class Edges:
+class Edge:
     def __init__(self, adjacency_dict):
         self.adjacency_dict = adjacency_dict # assume variable indexed from 1,2,...,v and factor indexed from 1,2,...,f
         self.variable_to_factor = adjacency_dict
