@@ -1,26 +1,29 @@
 class Node:
-	def __init__(self):
-		pass
+    def __init__(self):
+        self.id
+        self.state 
+        
 
-	def messagePass(self):
-		pass
 
-	def updateState(self):
-		pass
+    def message_pass(self):
+        pass
 
-	def computeOutgoingMessage(self):
-		pass
+    def update_state(self):
+        pass
 
-	def propagateMessage(self):
-		pass
+    def compute_outgoing_message(self):
+        pass
 
-	def read(self):
-		pass
+    def propagate_message(self):
+        pass
 
-	def update(self):
-		pass
+    def read(self):
+        pass
 
-	def delete(self):
-		pass
+    def update(self):
+        pass
 
-	
+    def delete(self):
+        pass
+
+        
