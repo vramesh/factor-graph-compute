@@ -1,4 +1,3 @@
-from pubsub import PubSub
 from state import StateStore, NodeState
 from pubsub import Publisher, Subscriber, Channel, PubSub
 
