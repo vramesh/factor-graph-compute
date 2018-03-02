@@ -1,8 +1,8 @@
 class Node:
     def __init__(self):
-        self.id
-        self.state 
-        
+        self.id = None
+        self.state = None
+
 
 
     def message_pass(self):
@@ -26,4 +26,6 @@ class Node:
     def delete(self):
         pass
 
+    def add(self,a,v):
+        return a+v
         

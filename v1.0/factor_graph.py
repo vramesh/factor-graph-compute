@@ -1,3 +1,6 @@
+import edges, node, state, pubsub
+
+
 class Factor_Graph:
     def __init__(self, input_path, algorithm):
         self.input_path = input_path
@@ -30,7 +33,7 @@ class Factor_Graph:
                         adjacency_dict[x] = [y]
 
             self.adjacency_dict = adjacency_dict
-            self.edges = Edge(self.adjacency_dict)
+            self.edges = edges.Edges(self.adjacency_dict)
 
         else:
             pass
