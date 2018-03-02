@@ -11,7 +11,6 @@ To set up:
 pipenv shell
 python --version
 ```
-
 ## Style Checking
 1. If you are already in the pipenv shell (`pipenv shell`), just run: `pylint <file or directory>`
 2. If you are not in the pipenv shell, you can run: `pipenv run pylint <file or directory>` 
