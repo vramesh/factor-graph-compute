@@ -1,6 +1,5 @@
-from pubsub import PubSub
 from state import StateStore, NodeState
-from pubsub import Publisher, Subscriber, Channel, PubSub
+from Pubsub import Publisher, Subscriber, Channel, PubSub
 
 class FactorGraph:
 	def __init__(self):
@@ -30,33 +29,30 @@ class Edge:
 
 
 class Node:
-	def __init__(self, node_id, node_function):
-		self.node_id = node_id
-		self.publisher = Publisher(node_id)
-		self.subscriber = Subscriber(node_id)
-		self.publisher.register()
-		self.subscriber.register(node_function)
+	def __init__(self, node_id, node_function, node_state):
+                self.node_id = node_id
+                self.publisher = Publisher(node_id)
+                self.subscriber = Subscriber(node_id)
+                self.publisher.register()
+                self.subscriber.register(node_function)
+                self.node_state = node_state 
 
 	def message_pass(self, incoming_message): 
 		#main callback for pubsub
 		#pubsubs handles active listening
-		updated_state = self.update_state(incoming_message)
-		new_outgoing_message = self.compute_outgoing_message(updated_state)
-		self.propagate_message(new_outgoing_message)
+		updated_state = self.__update_state(incoming_message)
+		new_outgoing_message = self.__compute_outgoing_message(updated_state)
+		self.__propagate_message(new_outgoing_message)
 
-	def update_state(self, incoming_message):
-		'''
-		node_state = StateStore[self.node_id]
-		new_full_state = node_state.update(incoming_message, self.node_id)
+	def __update_state(self, incoming_message):
+		new_full_state = self.node_state.update(incoming_message, self.node_id)
 		return new_full_state
-		'''
-		return incoming_message
 
-	def compute_outgoing_message(self, some_state):
+	def __compute_outgoing_message(self, some_state):
 		new_outgoing_message = "" 
 		return new_outgoing_message
 
-	def propagate_message(self, new_outgoing_message):
+	def __propagate_message(self, new_outgoing_message):
 		self.publisher.publish()
 
 		
