@@ -10,6 +10,7 @@ name = "pypi"
 numpy = "*"
 pylint = "*"
 mock = "*"
+"autopep8" = "*"
 
 
 [dev-packages]
