@@ -4,12 +4,12 @@ class StateStore: #node state manager
 
 
 class NodeState:
-	def __init__(self, callback_function, data, node_id):
-		self.node_id
-		self.data = data #dictionary, key of node_id of senders to their last message data
-		self.callback_function = callback_function
+	def __init__(self, callback_function, data, node_id, state_store):
+                self.node_id = node_id
+                self.data = data #dictionary, key of node_id of senders to their last message data
+                self.callback_function = callback_function
+                self.state_store = state_store
 
 	def update(self, incoming_data, sender):
 		self.data['sender'] = incoming_data #some update
 		return self.data
-
