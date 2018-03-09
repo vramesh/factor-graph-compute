@@ -1,0 +1,5 @@
+{
+    "algorithm": "page_rank",
+    "pubsub_choice": "redis",
+    "synchronous": "asynchronous"
+}

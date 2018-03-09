@@ -1,6 +1,5 @@
 class PubSub:  # how to map id to object?
     def __init__(self):
-
         self.publishers = dict()
         self.channels = dict()
         self.subscribers = dict()
