@@ -9,6 +9,30 @@ class PubSub:  # how to map id to object?
         if pubsub_choice == "redis":
             self.broker = RedisBroker()
 
+
+    #there's an order in which we call these
+
+
+    #node level call
+    def register_subscriber(self, subscriber_id, channel_ids, callback_function):
+        self.broker.add_subscriber(subscriber_id, callback_function)
+        for channle_id in channel_ids:
+            self.broker.add_subscription(subscriber_id, channel_id)
+        self.broker.start_subscriber()
+
+    #node level call
+    def register_publisher(self, publisher_id):
+        self.broker.add_publisher(publisher_id)
+
+    #edge level call
+    def register_channel(self, channel_id):
+        self.broker.add_channel(channel_id)
+
+    def start():
+        self.broker.start()
+
+
+
 class Broker:
     def __init__(self): pass
 
@@ -21,6 +45,7 @@ class Broker:
     def add_subscription(self, subscriber_id, channel_name): return
 
 #when initialize class, assume is already registered in broker?
+'''
 class Publisher:
     def __init__(self, publisher_id):
         self.id = publisher_id
@@ -60,3 +85,4 @@ class Subscriber:
             self.broker.add_subscription(self.id, channel_name)
         else:
             raise ValueError("You must first register with a broker!")
+'''

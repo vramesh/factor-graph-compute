@@ -31,6 +31,9 @@ class RedisBroker:
     def publish(self,message, channel_id):
         self.redis_main.publish(channel_id, message)
 
+    def start_subscriber(self):
+        pass
+
     def start(self):
 
         def start_subscriber(subscriber_id):
