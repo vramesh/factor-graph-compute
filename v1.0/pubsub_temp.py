@@ -54,7 +54,7 @@ class RedisBroker:
         # while not new_subscriber.get_message():
         #     pass
 
-def test():
+def test_pubsub_redis():
     redis = RedisBroker()
     redis.add_publisher("p1")
     redis.add_publisher("p2")

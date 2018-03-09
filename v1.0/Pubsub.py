@@ -1,33 +1,13 @@
+from pubsub_temp import RedisBroker
+
 class PubSub:  # how to map id to object?
-    def __init__(self):
+    def __init__(self,pubsub_choice="redis"):
         self.publishers = dict()
         self.channels = dict()
         self.subscribers = dict()
         self.channel_to_subscriber = dict()
-
-    '''
-    def register_publishers(self, list_of_publishers):
-        for publisher in list_of_publishers:
-            publisher.register()
-
-    def register_channels(self, list_of_channels):
-        for channel in list_of_channels:
-            channel.register()
-
-
-    def register_subscribers(self, list_of_subscribers):
-        for subscriber in list_of_subscribers:
-            subscriber.register()
-
-    def subscribe(channel_id, subscriber_id):
-        if channel_id in self.channel_to_subscriber:
-            self.channel_to_subscriber[channel_id].append(subscriber_id)
-        else:
-            self.channel_to_subscriber[channel_id] = [subscriber_id]
-
-        #ligra.subscribe(channel_id, subscriber_id)
-    '''
-
+        if pubsub_choice == "redis":
+            self.broker = RedisBroker()
 
 class Broker:
     def __init__(self): pass
@@ -40,7 +20,7 @@ class Broker:
 
     def add_subscription(self, subscriber_id, channel_name): return
 
-
+#when initialize class, assume is already registered in broker?
 class Publisher:
     def __init__(self, publisher_id):
         self.id = publisher_id
