@@ -1,58 +1,71 @@
-from state import StateStore, NodeState
-from Pubsub import Publisher, Subscriber, Channel, PubSub
+from Pubsub import PubSub
+from state import RedisNodeStateStore
+from multiprocessing import Process, Manager, Array, current_process
+from node_update_functions import ALGORITHM_TO_UPDATE_FUNCTIONS
+from redis import Redis
+from redis_callback_class import *
+from reader import FactorGraphReader
+from node import Node
+from edge import Edge
+from input_to_fg_converter import convert_to_page_rank_factor_graph_file
+import time
+
 
 class FactorGraph:
-	def __init__(self):
-		self.factor_nodes = list() #list of Node objects
-		self.variable_nodes = list() #list of Node objects
-		self.edges = list() #list of Edge objects
+    def __init__(self, path_to_input_file=None, config={}):
+        self.factor_nodes = list() 
+        self.variable_nodes = list() 
+        self.edges = list() 
+        self.pubsub = PubSub(config['pubsub_choice'])
+        self.config = config
+        self.algorithm = config["algorithm"]
+        self.path_to_input_file = path_to_input_file
+        self.path_to_factor_graph_file = "examples/temporary_factor_graph.txt"
+        self.initialize_nodes_and_edges() 
+        self.pubsub.start()
+        time.sleep(0.1)
+
+    def initialize_nodes_and_edges(self): 
+        """
+        populates nodes and edges in FactorGraph
+        currently manually makes nodes but should read input file
+        """
+
+        update_var_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[self.algorithm]["update_var"]
+        wrapper_var_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_var_function, self.pubsub)
+        update_fac_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[self.algorithm]["update_fac"]
+        wrapper_fac_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_fac_function, self.pubsub)
+
+        if (self.algorithm == "page_rank"):
+            convert_to_page_rank_factor_graph_file(self.path_to_input_file,self.path_to_factor_graph_file)
+            self = FactorGraphReader.register_pubsub_from_pagerank_adjacency_list(self.path_to_factor_graph_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
+        else:
+            print("Haven't implemented this algorithm yet")
 
 
+    def run(self):
+        for node in self.variable_nodes:
+            node.receive_messages_from_neighbors()
 
-class FactorGraphService:
-	def __init__(self):
-		pass
+    def get_result(self):
+        results = list()
+        for node in self.variable_nodes:
+            results.append(node.get_current_cached())
+        return results
 
-	def create(self, path_to_file):
-		factor_graph = FactorGraph()
-		return factor_graph
+if __name__ == "__main__":
+    r = Redis()
+    r.flushall()
+    config = {
+        "algorithm": "page_rank",
+        "pubsub_choice": "redis",
+        "synchronous": "asynchronous"
+    }
 
-	def run(self, factor_graph):
-		answer_dictionary = dict()
-		return answer_dictionary
+    path_to_input_file = "examples/pagerank_graph_adjaceny_list_example.txt"
+    try_fg = FactorGraph(path_to_input_file, config)
+    try_fg.run()
+    time.sleep(20)
+    print(try_fg.get_result())
 
 
-class Edge:
-	def __init__(self, edge_id):
-		self.channel = Channel()
-		self.channel.register()
-
-
-class Node:
-	def __init__(self, node_id, node_function, node_state):
-                self.node_id = node_id
-                self.publisher = Publisher(node_id)
-                self.subscriber = Subscriber(node_id)
-                self.publisher.register()
-                self.subscriber.register(node_function)
-                self.node_state = node_state 
-
-	def message_pass(self, incoming_message): 
-		#main callback for pubsub
-		#pubsubs handles active listening
-		updated_state = self.__update_state(incoming_message)
-		new_outgoing_message = self.__compute_outgoing_message(updated_state)
-		self.__propagate_message(new_outgoing_message)
-
-	def __update_state(self, incoming_message):
-		new_full_state = self.node_state.update(incoming_message, self.node_id)
-		return new_full_state
-
-	def __compute_outgoing_message(self, some_state):
-		new_outgoing_message = "" 
-		return new_outgoing_message
-
-	def __propagate_message(self, new_outgoing_message):
-		self.publisher.publish()
-
-		
