@@ -1,58 +1,59 @@
-from state import StateStore, NodeState
-from Pubsub import Publisher, Subscriber, Channel, PubSub
+from Pubsub import PubSub
+from state import RedisNodeStateStore
+from multiprocessing import Process, Manager, Array, current_process
+from node_update_functions import ALGORITHM_TO_UPDATE_FUNCTIONS
+from redis import Redis
+from redis_callback_class import *
+from reader import FactorGraphReader
+from node import Node
+from edge import Edge
+import time
+
 
 class FactorGraph:
-	def __init__(self):
-		self.factor_nodes = list() #list of Node objects
-		self.variable_nodes = list() #list of Node objects
-		self.edges = list() #list of Edge objects
+    def __init__(self, path_to_input_file=None, config={}):
+        self.factor_nodes = list() 
+        self.variable_nodes = list() 
+        self.edges = list() 
+        self.pubsub = PubSub(config['pubsub_choice'])
+        self.config = config
+        self.algorithm = config["algorithm"]
+        self.path_to_input_file = path_to_input_file
+        self.initialize_nodes_and_edges() 
+        self.pubsub.start()
+        time.sleep(0.1)
+
+    def initialize_nodes_and_edges(self): 
+        """
+        populates nodes and edges in FactorGraph
+        currently manually makes nodes but should read input file
+        """
+
+        update_var_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[self.algorithm]["update_var"]
+        wrapper_var_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_var_function, self.pubsub)
+        update_fac_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[self.algorithm]["update_fac"]
+        wrapper_fac_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_fac_function, self.pubsub)
+
+        self = FactorGraphReader.register_pubsub_from_pagerank_adjacency_list(self.path_to_input_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
+    
+    def run(self):
+        for node in self.variable_nodes:
+            node.receive_messages_from_neighbors()
 
 
 
-class FactorGraphService:
-	def __init__(self):
-		pass
 
-	def create(self, path_to_file):
-		factor_graph = FactorGraph()
-		return factor_graph
+if __name__ == "__main__":
+    r = Redis()
+    r.flushall()
+    config = {
+        "algorithm": "page_rank_fake",
+        "pubsub_choice": "redis",
+        "synchronous": "asynchronous"
+    }
 
-	def run(self, factor_graph):
-		answer_dictionary = dict()
-		return answer_dictionary
-
-
-class Edge:
-	def __init__(self, edge_id):
-		self.channel = Channel()
-		self.channel.register()
+    path_to_input_file = "examples/pagerank_factor_graph_example_adjadjacency_list.txt"
+    try_fg = FactorGraph(path_to_input_file, config)
+    try_fg.run()
 
 
-class Node:
-	def __init__(self, node_id, node_function, node_state):
-                self.node_id = node_id
-                self.publisher = Publisher(node_id)
-                self.subscriber = Subscriber(node_id)
-                self.publisher.register()
-                self.subscriber.register(node_function)
-                self.node_state = node_state 
-
-	def message_pass(self, incoming_message): 
-		#main callback for pubsub
-		#pubsubs handles active listening
-		updated_state = self.__update_state(incoming_message)
-		new_outgoing_message = self.__compute_outgoing_message(updated_state)
-		self.__propagate_message(new_outgoing_message)
-
-	def __update_state(self, incoming_message):
-		new_full_state = self.node_state.update(incoming_message, self.node_id)
-		return new_full_state
-
-	def __compute_outgoing_message(self, some_state):
-		new_outgoing_message = "" 
-		return new_outgoing_message
-
-	def __propagate_message(self, new_outgoing_message):
-		self.publisher.publish()
-
-		
