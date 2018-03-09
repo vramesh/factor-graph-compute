@@ -1,5 +1,7 @@
 from state import StateStore, NodeState
-from Pubsub import Publisher, Subscriber, Channel, PubSub, Broker
+from Pubsub import PubSub
+from pubsub_temp import RedisBroker
+import time
 
 ALGORITHM_TO_UPDATE_FUNCTIONS = \
 {
@@ -15,7 +17,7 @@ class FactorGraph:
         self.factor_nodes = list() 
         self.variable_nodes = list() 
         self.edges = list() 
-        self.pubsub = Pubsub(config['pubsub_choice'])
+        self.pubsub = PubSub(config['pubsub_choice'])
 
         #less important ones
         self.config = config
@@ -26,9 +28,13 @@ class FactorGraph:
         self.initialize_nodes_and_edges() #populates nodes and edges
         self.pubsub.start()
 
-    def initialize_nodes_and_edges(): 
-        pass
-            
+    def initialize_nodes_and_edges(self): 
+        node_1 = Node(1, "variable", lambda x: print("hello"), None, self.pubsub)
+        node_2 = Node(2, "factor", lambda x: print("goodbye"), None, self.pubsub)
+        edge = Edge(1, 2, "first_edge_bois", self.pubsub)
+        self.variable_nodes.append(node_1)
+        self.factor_nodes.append(node_2)
+        self.edges.append(edge)
 
 
 class FactorGraphService:
@@ -40,36 +46,41 @@ class FactorGraphService:
         return factor_graph
 
     def run(self, factor_graph):
-        answer_dictionary = dict()
-        return answer_dictionary
+        #answer_dictionary = dict()
+        redis = RedisBroker()
+        redis.publish("first_try","first_edge_bois")
+        #return answer_dictionary
 
 
 class Edge:
-    def __init__(self, edge_name):
-        self.channel = Channel(edge_name)
-        self.channel.register(self.pubsub)
-        # Pubsub.registerChannel(chan_id)
+    def __init__(self, variable_node_id, factor_node_id, edge_id, pubsub):
+        self.pubsub = pubsub
+        self.pubsub.register_channel(edge_id)
+        self.pubsub.register_subscription(variable_node_id, edge_id)
+        self.pubsub.register_subscription(factor_node_id, edge_id)
 
 
 class Node:
-    def __init__(self, node_id, new_type, node_function, node_state, broker):
+    def __init__(self, node_id, node_type, node_function, node_state, pubsub):
         self.node_id = node_id
         self.node_type = node_type
         self.node_state = node_state
-        self.broker = broker
-        #may not need node_dunction
-
-        # Connect to PubSub
-        # Pubsub.registerPublisher(publisher_id)
-        # Pubsub.registerSub(sub_id)
-        # Pubsub.subscribt(sub_id, cha_id)
-
-        self.publisher = Publisher(node_id)
-        self.subscriber = Subscriber(node_id, self.broker)
-        self.publisher.register()
-        self.subscriber.register(self.broker)
+        self.pubsub = pubsub
+        self.pubsub.register_publisher(node_id)
+        self.pubsub.register_subscriber(node_id, node_function)
 
 
+config = {
+    "algorithm": "page_rank",
+    "pubsub_choice": "redis",
+    "synchronous": "asynchronous"
+}
+trying = FactorGraphService().create(None, config)
+time.sleep(1)
+FactorGraphService().run(trying)
+
+
+'''
 def message_pass(self, incoming_message, all_channels): 
     #main callback for pubsub
     #pubsubs handles active listening
@@ -88,6 +99,7 @@ def __compute_outgoing_message(self, updated_state, channel_name):
 
 def __propagate_message(self, new_outgoing_message):
     self.publisher.publish(new_outgoing_message)
+'''
 
 # It's a mess here. Publisher, Subscriber is in Node, but all the channel information
 # is in node_state. It is unclear if callback_function should be in both or not, and it seem

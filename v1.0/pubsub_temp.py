@@ -22,7 +22,7 @@ class RedisBroker:
                                            "callback_function": callback_function}
 
     def add_channel(self,channel_id):
-        self.channels.add(channel_id)
+        self.channels.append(channel_id)
 
     def add_subscription(self,subscriber_id, channel_id):
         callback_function = self.subscribers[subscriber_id]["callback_function"]
@@ -31,11 +31,7 @@ class RedisBroker:
     def publish(self,message, channel_id):
         self.redis_main.publish(channel_id, message)
 
-    def start_subscriber(self):
-        pass
-
     def start(self):
-
         def start_subscriber(subscriber_id):
             while True:
                 message = self.subscribers[subscriber_id]["redis_pubsub"].get_message()
@@ -47,15 +43,6 @@ class RedisBroker:
                     args=(subscriber_id,))
             process.daemon = True
             process.start()
-
-
-    def stop():
-        pass
-
-# how do you want to limit
-
-        # while not new_subscriber.get_message():
-        #     pass
 
 def test_pubsub_redis():
     redis = RedisBroker()

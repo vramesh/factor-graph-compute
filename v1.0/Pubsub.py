@@ -2,33 +2,30 @@ from pubsub_temp import RedisBroker
 
 class PubSub:  # how to map id to object?
     def __init__(self,pubsub_choice="redis"):
-        self.publishers = dict()
-        self.channels = dict()
-        self.subscribers = dict()
-        self.channel_to_subscriber = dict()
+        self.publishers = dict() #populated nodes
+        self.subscribers = dict() #populated nodes
+        self.channels = dict() #populated edges
+
         if pubsub_choice == "redis":
             self.broker = RedisBroker()
 
-
-    #there's an order in which we call these
-
-
-    #node level call
-    def register_subscriber(self, subscriber_id, channel_ids, callback_function):
+    #these are called during FG.initialize_nodes_and_edges
+    def register_subscriber(self, subscriber_id, callback_function):
         self.broker.add_subscriber(subscriber_id, callback_function)
-        for channle_id in channel_ids:
-            self.broker.add_subscription(subscriber_id, channel_id)
-        self.broker.start_subscriber()
 
-    #node level call
+    #these are called during FG.initialize_nodes_and_edges
     def register_publisher(self, publisher_id):
         self.broker.add_publisher(publisher_id)
 
-    #edge level call
+    #these are called during FG.initialize_nodes_and_edges
     def register_channel(self, channel_id):
         self.broker.add_channel(channel_id)
 
-    def start():
+    def register_subscription(self, subscriber_id, channel_id):
+        self.broker.add_subscription(subscriber_id, channel_id)
+
+    #this is called during FG.create() after initialization
+    def start(self):
         self.broker.start()
 
 
