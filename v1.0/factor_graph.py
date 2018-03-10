@@ -1,6 +1,6 @@
 from state import StateStore, NodeState
 from Pubsub import PubSub
-from pubsub_temp import RedisBroker
+from redisBroker import RedisBroker
 import time
 
 ALGORITHM_TO_UPDATE_FUNCTIONS = \
@@ -13,28 +13,42 @@ ALGORITHM_TO_UPDATE_FUNCTIONS = \
 
 class FactorGraph:
     def __init__(self, path_to_input_file, config):
-        #important
         self.factor_nodes = list() 
         self.variable_nodes = list() 
         self.edges = list() 
         self.pubsub = PubSub(config['pubsub_choice'])
 
-        #less important ones
         self.config = config
         self.algorithm = config["algorithm"]
         self.path_to_input_file = path_to_input_file
 
-        #register and initialize pubsub processes
-        self.initialize_nodes_and_edges() #populates nodes and edges
+        self.initialize_nodes_and_edges() 
         self.pubsub.start()
 
     def initialize_nodes_and_edges(self): 
-        node_1 = Node(1, "variable", lambda x: print("hello"), None, self.pubsub)
+        """
+        populates nodes and edges in FactorGraph
+        currently manually makes nodes but should read input file
+        """
+        node_1 = Node(1, "variable", message_pass, None, self.pubsub)
         node_2 = Node(2, "factor", lambda x: print("goodbye"), None, self.pubsub)
         edge = Edge(1, 2, "first_edge_bois", self.pubsub)
         self.variable_nodes.append(node_1)
         self.factor_nodes.append(node_2)
         self.edges.append(edge)
+
+def message_pass(incoming_message):
+    print("hello")
+    node_id = process.name()
+    updated_node_cache = update_node_cache(incoming_message, node_id)
+    for channel_name in all_channels:
+        new_outgoing_message = self.__compute_outgoing_message(updated_state, channel_name)
+        self.__propagate_message(new_outgoing_message, channel_name)
+
+def update_node_cache(incoming_message, node_id):
+    node_cache_store = {1: 'blah', 2: 'hello'}
+    updated_node_cache = node_cache_store.update(incoming_message, node_id)
+    return updated_node_cache
 
 
 class FactorGraphService:
@@ -100,7 +114,3 @@ def __compute_outgoing_message(self, updated_state, channel_name):
 def __propagate_message(self, new_outgoing_message):
     self.publisher.publish(new_outgoing_message)
 '''
-
-# It's a mess here. Publisher, Subscriber is in Node, but all the channel information
-# is in node_state. It is unclear if callback_function should be in both or not, and it seem
-# like we have to send lots of unnecessary data between node and node_state

@@ -1,4 +1,4 @@
-from pubsub_temp import RedisBroker
+from redisBroker import RedisBroker
 
 class PubSub:  # how to map id to object?
     def __init__(self,pubsub_choice="redis"):
