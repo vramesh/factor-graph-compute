@@ -1,6 +1,6 @@
 from state import StateStore, NodeState
-from Pubsub import PubSub
-from redisBroker import RedisBroker
+from pubsub import PubSub
+from redis_broker import RedisBroker
 import time
 
 ALGORITHM_TO_UPDATE_FUNCTIONS = \
