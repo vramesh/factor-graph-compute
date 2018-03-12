@@ -43,30 +43,94 @@ class FactorGraph:
         """
 
         #logic for updateing update_function_custom argument
-        simple_message_pass = lambda incoming_message: message_pass_wrapper(incoming_message, lambda x: print("hello" + str(incoming_message) ))
+        if self.algorithm == "hello_world":
+            simple_message_pass = lambda incoming_message: message_pass_wrapper(incoming_message, lambda x: print("hello" + str(incoming_message) ))
+            node_1 = Node(1, "variable", simple_message_pass, "hello", self.pubsub)
+            node_2 = Node(2, "factor", simple_message_pass, "goodbye", self.pubsub)
+            edge = Edge(1, 2, "first_edge_bois", self.pubsub)
+            self.variable_nodes.append(node_1)
+            self.factor_nodes.append(node_2)
+            self.edges.append(edge)
 
-        node_1 = Node(1, "variable", simple_message_pass, "hello", self.pubsub)
-        node_2 = Node(2, "factor", simple_message_pass, "goodbye", self.pubsub)
-        edge = Edge(1, 2, "first_edge_bois", self.pubsub)
-        self.variable_nodes.append(node_1)
-        self.factor_nodes.append(node_2)
-        self.edges.append(edge)
+        if self.algorithm == "page_rank": # this assume reading from the file which specifies factor graph structure
+            update_var_function  = ALGORITHM_TO_UPDATE_FUNCTIONS["page_rank"]["update_var"]
+            wrapper_var_function = lambda incoming_message: message_pass_wrapper(incoming_message, update_var_function)
+            update_fac_function  = ALGORITHM_TO_UPDATE_FUNCTIONS["page_rank"]["update_fac"]
+            wrapper_fac_function = lambda incoming_message: message_pass_wrapper(incoming_message, update_fac_function)
+            (adjacency_dict_var,adjacency_dict_fac) = read_file_factor_graph(self.path_to_input_file) #{1:[2,3]}
+            num_node = len(adjacency_dict_var)
 
+            for variable_index in adjacency_dict_var:
+                variable_name = "v" + str(variable_index)
+                initial_messages_var = dict([(x,0) for x in adjacency_dict_var[variable_index]])
+                initial_messages_var[variable_index] = 1/num_node
+                print(variable_name)
+                variable_node = Node(variable_name,"variable",wrapper_var_function,initial_messages_var,self.pubsub)
+                self.variable_nodes.append(variable_node)
+
+            for factor_index in adjacency_dict_fac:
+                factor_name = "f" + str(factor_index)
+                initial_messages_fac = dict([(x,0) for x in adjacency_dict_fac[factor_index]])
+                initial_messages_fac[factor_index] = 0
+                factor_node = Node(factor_name,"factor",wrapper_fac_function,initial_messages_fac,self.pubsub)
+                self.factor_nodes.append(factor_node)
+
+            for variable_index in adjacency_dict_var:
+                for factor_index in adjacency_dict_var[variable_index]:
+                    variable_name = "v" + str(variable_index)
+                    factor_name = "f" + str(factor_index)
+                    channel_name = "v"+str(variable_index)+"_f"+str(factor_index)
+                    edge = Edge(variable_name,factor_name, channel_name, self.pubsub)
+                    self.edges.append(edge)
+
+            for factor_index in adjacency_dict_fac:
+                for variable_index in adjacency_dict_fac[factor_index]:
+                    variable_name = "v" + str(variable_index)
+                    factor_name = "f" + str(factor_index)
+                    channel_name = "f"+str(factor_index)+"_v"+str(variable_index)
+                    edge = Edge(factor_name,variable_name, channel_name, self.pubsub)
+                    self.edges.append(edge)
+
+
+
+def read_file_factor_graph(path_to_input_file): 
+    adjacency_dict_var = dict() #key: variable index, value: list of factor index
+    adjacency_dict_fac = dict()
+    with open(path_to_input_file) as f:
+        all_lines = f.readlines()
+        for line in all_lines:
+            [x,y] = line.split()
+            x = int(x)
+            y = int(y)
+
+            if x in adjacency_dict_var:
+                adjacency_dict_var[x].append(y)
+            else:
+                adjacency_dict_var[x] = [y]
+
+            if y in adjacency_dict_fac:
+                adjacency_dict_fac[y].append(x)
+            else:
+                adjacency_dict_fac[y] = [x]
+
+    return (adjacency_dict_var,adjacency_dict_fac)
+
+
+#channel_name_convention: (type)index_(type)index
 def message_pass_wrapper(incoming_message, input_function):
-    update_function = input_function
     node_id = current_process().name
-
+    from_channel = incoming_message["channel"]
+    # from_node_type = 
     updated_node_cache = update_node_cache(incoming_message, node_id) #crash
-    print("hi2b")
+
+    update_function = input_function
     for channel_name in all_channels:
         new_outgoing_message = self.__compute_outgoing_message(update_function, updated_state, channel_name)
         self.__propagate_message(new_outgoing_message, channel_name)
     
 
 def update_node_cache(incoming_message, node_id):
-    print("hi")
-    node_cache_store = {1: 'blah', 2: 'hello'}
-    updated_node_cache = node_cache_store.update(incoming_message, node_id)
+    updated_node_cache = NodeStateStore("redis").update_node(incoming_message, node_id)
     return updated_node_cache
 
 
@@ -86,11 +150,10 @@ class FactorGraphService:
 
 
 class Edge:
-    def __init__(self, variable_node_id, factor_node_id, edge_id, pubsub):
+    def __init__(self, from_node_id, to_node_id, edge_id, pubsub):
         self.pubsub = pubsub
         self.pubsub.register_channel(edge_id)
-        self.pubsub.register_subscription(variable_node_id, edge_id)
-        self.pubsub.register_subscription(factor_node_id, edge_id)
+        self.pubsub.register_subscription(to_node_id, edge_id)
 
 
 class Node:
@@ -109,9 +172,16 @@ config = {
     "pubsub_choice": "redis",
     "synchronous": "asynchronous"
 }
-trying = FactorGraphService().create(None, config)
-time.sleep(1)
-FactorGraphService().run(trying)
+# trying = FactorGraphService().create(None, config)
+# time.sleep(1)
+# FactorGraphService().run(trying)
+
+path_to_input_file = "input.txt"
+try_fg = FactorGraph(path_to_input_file,config)
+
+
+
+
 
 
 '''
