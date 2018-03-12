@@ -1,6 +1,8 @@
-from state import StateStore, NodeState
-from pubsub import PubSub
+from state import NodeStateStore
+from Pubsub import PubSub
 from redis_broker import RedisBroker
+from state import RedisNodeStateStore
+from multiprocessing import Process, Manager, Array, current_process
 import time
 
 ALGORITHM_TO_UPDATE_FUNCTIONS = \
@@ -10,6 +12,15 @@ ALGORITHM_TO_UPDATE_FUNCTIONS = \
         "update_fac": lambda state, messages, sender_index, recipient_index: sum([messages.values()]) - messages[sender_index] if sender_index == recipient_index else 0
     }
 }
+
+
+toy_config = \
+{
+    "algorithm": "hello_world",
+    "pubsub_choice": "redis",
+    "synchronous": "asynchronous"
+}
+
 
 class FactorGraph:
     def __init__(self, path_to_input_file, config):
@@ -30,22 +41,30 @@ class FactorGraph:
         populates nodes and edges in FactorGraph
         currently manually makes nodes but should read input file
         """
-        node_1 = Node(1, "variable", message_pass, None, self.pubsub)
-        node_2 = Node(2, "factor", lambda x: print("goodbye"), None, self.pubsub)
+
+        #logic for updateing update_function_custom argument
+        simple_message_pass = lambda incoming_message: message_pass_wrapper(incoming_message, lambda x: print("hello" + str(incoming_message) ))
+
+        node_1 = Node(1, "variable", simple_message_pass, "hello", self.pubsub)
+        node_2 = Node(2, "factor", simple_message_pass, "goodbye", self.pubsub)
         edge = Edge(1, 2, "first_edge_bois", self.pubsub)
         self.variable_nodes.append(node_1)
         self.factor_nodes.append(node_2)
         self.edges.append(edge)
 
-def message_pass(incoming_message):
-    print("hello")
-    node_id = process.name()
-    updated_node_cache = update_node_cache(incoming_message, node_id)
+def message_pass_wrapper(incoming_message, input_function):
+    update_function = input_function
+    node_id = current_process().name
+
+    updated_node_cache = update_node_cache(incoming_message, node_id) #crash
+    print("hi2b")
     for channel_name in all_channels:
-        new_outgoing_message = self.__compute_outgoing_message(updated_state, channel_name)
+        new_outgoing_message = self.__compute_outgoing_message(update_function, updated_state, channel_name)
         self.__propagate_message(new_outgoing_message, channel_name)
+    
 
 def update_node_cache(incoming_message, node_id):
+    print("hi")
     node_cache_store = {1: 'blah', 2: 'hello'}
     updated_node_cache = node_cache_store.update(incoming_message, node_id)
     return updated_node_cache
@@ -75,13 +94,14 @@ class Edge:
 
 
 class Node:
-    def __init__(self, node_id, node_type, node_function, node_state, pubsub):
-        self.node_id = node_id
-        self.node_type = node_type
-        self.node_state = node_state
+    def __init__(self, node_id, node_type, node_function, node_message_cache, pubsub):
         self.pubsub = pubsub
+        self.state_store = NodeStateStore("redis")
+        self.state_store.create_node_state(node_id, node_message_cache, node_type, 1)
         self.pubsub.register_publisher(node_id)
         self.pubsub.register_subscriber(node_id, node_function)
+
+
 
 
 config = {
@@ -95,20 +115,12 @@ FactorGraphService().run(trying)
 
 
 '''
-def message_pass(self, incoming_message, all_channels): 
-    #main callback for pubsub
-    #pubsubs handles active listening
-    updated_state = self.__update_state(incoming_message)
-    for channel_name in all_channels:
-        new_outgoing_message = self.__compute_outgoing_message(updated_state, channel_name)
-        self.__propagate_message(new_outgoing_message, channel_name)
-
 def __update_state(self, incoming_message):
-    new_full_state = self.node_state.update(incoming_message, self.node_id)
+    new_full_state = self.node_message_cache.update(incoming_message, self.node_id)
     return new_full_state
 
 def __compute_outgoing_message(self, updated_state, channel_name):
-    new_outgoing_message = ""  # need callback function here, which in turn need permanent state, all current messages, so node_state need to send it here?
+    new_outgoing_message = ""  # need callback function here, which in turn need permanent state, all current messages, so node_message_cache need to send it here?
     return new_outgoing_message
 
 def __propagate_message(self, new_outgoing_message):

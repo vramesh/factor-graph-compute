@@ -3,3 +3,9 @@
     "pubsub_choice": "redis",
     "synchronous": "asynchronous"
 }
+
+{
+	"algorithm": "hello_world",
+	"pubsub_choice": "redis",
+	"synchronous": "asynchronous"
+}
