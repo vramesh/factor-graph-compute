@@ -14,7 +14,7 @@ class NodeStateStore: #node state manager
         return self.state_store_spec.update_node_messages(incoming_message, node_id)
 
     def fetch_node(self, node_id, field):
-        self.state_store_spec.get_data(node_id,field)
+        return self.state_store_spec.get_data(node_id,field)
 
     def create_node_state(self, node_id, initial_messages, node_type, node_data):
         self.state_store_spec.create_node_state(node_id, initial_messages, node_type, node_data)
@@ -32,7 +32,6 @@ class RedisNodeStateStore:
         previous_message[from_node] = new_message
         to_be_set_message = previous_message
         self.set_data(node_id,to_be_set_message,"messages")
-
         return to_be_set_message
 
     # def fetch_node_messages(self, node_id):
