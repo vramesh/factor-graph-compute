@@ -8,8 +8,8 @@ import time
 ALGORITHM_TO_UPDATE_FUNCTIONS = \
 {
     "page_rank": {
-        "update_var": lambda state, messages, sender_index, recipient_index: messages[sender_index]/state if sender_index!=recipient_index else 0 ,
-        "update_fac": lambda state, messages, sender_index, recipient_index: sum([messages.values()]) - messages[sender_index] if sender_index == recipient_index else 0
+        "update_var": lambda state, messages, sender_id, recipient_id: messages[sender_id]/state if sender_id!=recipient_id else 0 ,
+        "update_fac": lambda state, messages, sender_id, recipient_id: sum([messages.values()]) - messages[sender_id] if sender_id == recipient_id else 0
     }
 }
 
@@ -64,15 +64,16 @@ class FactorGraph:
                 variable_name = "v" + str(variable_index)
                 initial_messages_var = dict([(x,0) for x in adjacency_dict_var[variable_index]])
                 initial_messages_var[variable_index] = 1/num_node
-                print(variable_name)
-                variable_node = Node(variable_name,"variable",wrapper_var_function,initial_messages_var,self.pubsub)
+                node_data = len(adjacency_dict_var[variable_index])
+                variable_node = Node(variable_name,"variable",wrapper_var_function,initial_messages_var, node_data, self.pubsub)
                 self.variable_nodes.append(variable_node)
 
             for factor_index in adjacency_dict_fac:
                 factor_name = "f" + str(factor_index)
                 initial_messages_fac = dict([(x,0) for x in adjacency_dict_fac[factor_index]])
                 initial_messages_fac[factor_index] = 0
-                factor_node = Node(factor_name,"factor",wrapper_fac_function,initial_messages_fac,self.pubsub)
+                node_data = None
+                factor_node = Node(factor_name,"factor",wrapper_fac_function,initial_messages_fac, node_data, self.pubsub)
                 self.factor_nodes.append(factor_node)
 
             for variable_index in adjacency_dict_var:
@@ -119,7 +120,6 @@ def read_file_factor_graph(path_to_input_file):
 #channel_name_convention: (type)index_(type)index
 def message_pass_wrapper(incoming_message, input_function):
     node_id = current_process().name
-    from_channel = incoming_message["channel"]
     # from_node_type = 
     updated_node_cache = update_node_cache(incoming_message, node_id) #crash
 
@@ -157,10 +157,10 @@ class Edge:
 
 
 class Node:
-    def __init__(self, node_id, node_type, node_function, node_message_cache, pubsub):
+    def __init__(self, node_id, node_type, node_function, initial_node_message_cache, node_data, pubsub):
         self.pubsub = pubsub
         self.state_store = NodeStateStore("redis")
-        self.state_store.create_node_state(node_id, node_message_cache, node_type, 1)
+        self.state_store.create_node_state(node_id, initial_node_message_cache, node_type, node_data)
         self.pubsub.register_publisher(node_id)
         self.pubsub.register_subscriber(node_id, node_function)
 
@@ -176,8 +176,8 @@ config = {
 # time.sleep(1)
 # FactorGraphService().run(trying)
 
-path_to_input_file = "input.txt"
-try_fg = FactorGraph(path_to_input_file,config)
+# path_to_input_file = "input.txt"
+# try_fg = FactorGraph(path_to_input_file,config)
 
 
 
