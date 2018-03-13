@@ -14,7 +14,8 @@ class NodeStateStore: #node state manager
         return self.state_store_spec.update_node_messages(incoming_message, node_id)
 
     def fetch_node(self, node_id):
-        self.state_store_spec.fetch_node(node_id)
+        pass  # need to implement
+        # self.state_store_spec.fetch_node(node_id)
 
     def create_node_state(self, node_id, initial_messages, node_type, node_data):
         self.state_store_spec.create_node_state(node_id, initial_messages, node_type, node_data)
@@ -22,16 +23,16 @@ class NodeStateStore: #node state manager
 
 class RedisNodeStateStore:
     def __init__(self):
-        pass
+        self.redis = Redis()
 
     def update_node_messages(self, message_to_be_cached, node_id):
-        redis = Redis()
-
-        previous_message = get_data(redis,node_id, "messages")
+        previous_message = self.get_data(node_id, "messages")
+        channel_name = self.decryptor(message_to_be_cached["channel"],is_string=True)
+        from_node = channel_name.split("_")[0]
         new_message = message_to_be_cached["data"]  # careful if it is binary or str
-        previous_message[node_id] = new_message
+        previous_message[from_node] = new_message
         to_be_set_message = previous_message
-        set_data(redis,node_id,to_be_set_message,"messages")
+        self.set_data(node_id,to_be_set_message,"messages")
 
         return to_be_set_message
 
@@ -41,21 +42,28 @@ class RedisNodeStateStore:
 
     def create_node_state(self, node_id, initial_messages, node_type, node_data):
         #id -> {"messages": , "type", "data"}
-        redis = Redis()
-        redis.hmset(node_id, {"messages": initial_messages, "node_type": node_type,
+        self.redis.hmset(node_id, {"messages": initial_messages, "node_type": node_type,
             "node_data": node_data})
         return True
 
-    def get_data(redis,node_id,field): # pickle back to str or dict 
-        message = redis.hget(node_id, field)
-        if type(message) == bytes:
-            message = message.decode("ascii")
-        return ast.literal_eval(message)
+    def get_data(self,node_id,field,is_string=False): # pickle back to str or dict 
+        message = self.redis.hget(node_id, field)
+        return self.decryptor(message)
 
-    def set_data(redis, node_id, to_be_set_message, field): # if we want to pickle, pickle here
-        redis.hset(node_id, field, to_be_set_message)
+    def set_data(self, node_id, to_be_set_message, field): # if we want to pickle, pickle here
+        self.redis.hset(node_id, field, to_be_set_message)
         return True
 
+    def decryptor(self,data,is_string=False):
+        if type(data) == bytes:
+            str_data = data.decode("ascii")
+        else:
+            str_data = data
+        if is_string:
+            return_message = str_data
+        else:
+            return_message = ast.literal_eval(str_data)
+        return return_message
 
 
 

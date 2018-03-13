@@ -62,16 +62,16 @@ class FactorGraph:
 
             for variable_index in adjacency_dict_var:
                 variable_name = "v" + str(variable_index)
-                initial_messages_var = dict([(x,0) for x in adjacency_dict_var[variable_index]])
-                initial_messages_var[variable_index] = 1/num_node
+                initial_messages_var = dict([("f"+str(x),0) for x in adjacency_dict_var[variable_index]])
+                initial_messages_var["f"+str(variable_index)] = 1/num_node
                 node_data = len(adjacency_dict_var[variable_index])
                 variable_node = Node(variable_name,"variable",wrapper_var_function,initial_messages_var, node_data, self.pubsub)
                 self.variable_nodes.append(variable_node)
 
             for factor_index in adjacency_dict_fac:
                 factor_name = "f" + str(factor_index)
-                initial_messages_fac = dict([(x,0) for x in adjacency_dict_fac[factor_index]])
-                initial_messages_fac[factor_index] = 0
+                initial_messages_fac = dict([("v"+str(x),0) for x in adjacency_dict_fac[factor_index]])
+                initial_messages_fac["v" + str(factor_index)] = 0
                 node_data = None
                 factor_node = Node(factor_name,"factor",wrapper_fac_function,initial_messages_fac, node_data, self.pubsub)
                 self.factor_nodes.append(factor_node)
@@ -176,8 +176,10 @@ config = {
 # time.sleep(1)
 # FactorGraphService().run(trying)
 
-# path_to_input_file = "input.txt"
-# try_fg = FactorGraph(path_to_input_file,config)
+path_to_input_file = "input.txt"
+try_fg = FactorGraph(path_to_input_file,config)
+mock_incoming_message = {'channel': b'f1_v2', 'data': 0.4, 'type': 'subscribe', 'pattern': None}
+updated_node_cache = update_node_cache(mock_incoming_message,"v2")
 
 
 
