@@ -13,9 +13,8 @@ class NodeStateStore: #node state manager
     def update_node(self, incoming_message, node_id):
         return self.state_store_spec.update_node_messages(incoming_message, node_id)
 
-    def fetch_node(self, node_id):
-        pass  # need to implement
-        # self.state_store_spec.fetch_node(node_id)
+    def fetch_node(self, node_id, field):
+        self.state_store_spec.get_data(node_id,field)
 
     def create_node_state(self, node_id, initial_messages, node_type, node_data):
         self.state_store_spec.create_node_state(node_id, initial_messages, node_type, node_data)

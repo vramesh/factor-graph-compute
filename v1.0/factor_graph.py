@@ -60,36 +60,30 @@ class FactorGraph:
             (adjacency_dict_var,adjacency_dict_fac) = read_file_factor_graph(self.path_to_input_file) #{1:[2,3]}
             num_node = len(adjacency_dict_var)
 
-            for variable_index in adjacency_dict_var:
-                variable_name = "v" + str(variable_index)
-                initial_messages_var = dict([("f"+str(x),0) for x in adjacency_dict_var[variable_index]])
-                initial_messages_var["f"+str(variable_index)] = 1/num_node
-                node_data = len(adjacency_dict_var[variable_index])
-                variable_node = Node(variable_name,"variable",wrapper_var_function,initial_messages_var, node_data, self.pubsub)
+            for variable_id in adjacency_dict_var:
+                # variable_name = "v" + str(variable_index)
+                initial_messages_var = dict(adjacency_dict_var[variable_id])
+                node_data = len(adjacency_dict_var[variable_id])-1
+                variable_node = Node(variable_id,"variable",wrapper_var_function,initial_messages_var,node_data,self.pubsub)
                 self.variable_nodes.append(variable_node)
 
-            for factor_index in adjacency_dict_fac:
-                factor_name = "f" + str(factor_index)
-                initial_messages_fac = dict([("v"+str(x),0) for x in adjacency_dict_fac[factor_index]])
-                initial_messages_fac["v" + str(factor_index)] = 0
-                node_data = None
-                factor_node = Node(factor_name,"factor",wrapper_fac_function,initial_messages_fac, node_data, self.pubsub)
+            for factor_id in adjacency_dict_fac:
+                initial_messages_fac = dict(adjacency_dict_fac[factor_id])
+                node_data = 0
+                factor_node = Node(factor_id,"factor",wrapper_fac_function,initial_messages_fac,node_data,self.pubsub)
                 self.factor_nodes.append(factor_node)
 
-            for variable_index in adjacency_dict_var:
-                for factor_index in adjacency_dict_var[variable_index]:
-                    variable_name = "v" + str(variable_index)
-                    factor_name = "f" + str(factor_index)
-                    channel_name = "v"+str(variable_index)+"_f"+str(factor_index)
-                    edge = Edge(variable_name,factor_name, channel_name, self.pubsub)
+            for variable_id in adjacency_dict_var:
+                for (factor_id,initial_message) in adjacency_dict_var[variable_id]:
+                    channel_name = variable_id + factor_id
+                    print(channel_name)
+                    edge = Edge(variable_id,factor_id, channel_name, self.pubsub)
                     self.edges.append(edge)
 
-            for factor_index in adjacency_dict_fac:
-                for variable_index in adjacency_dict_fac[factor_index]:
-                    variable_name = "v" + str(variable_index)
-                    factor_name = "f" + str(factor_index)
-                    channel_name = "f"+str(factor_index)+"_v"+str(variable_index)
-                    edge = Edge(factor_name,variable_name, channel_name, self.pubsub)
+            for factor_id in adjacency_dict_fac:
+                for (variable_id,initial_message) in adjacency_dict_fac[factor_id]:
+                    channel_name = factor_id + variable_id
+                    edge = Edge(factor_id,variable_id, channel_name, self.pubsub)
                     self.edges.append(edge)
 
 
@@ -100,19 +94,18 @@ def read_file_factor_graph(path_to_input_file):
     with open(path_to_input_file) as f:
         all_lines = f.readlines()
         for line in all_lines:
-            [x,y] = line.split()
-            x = int(x)
-            y = int(y)
+            [x,y,initial_message] = line.split()
+            initial_message = float(initial_message)
 
-            if x in adjacency_dict_var:
-                adjacency_dict_var[x].append(y)
-            else:
-                adjacency_dict_var[x] = [y]
+            if x[0]=="v":
+                add_to_adjacency_dict = adjacency_dict_var
+            elif x[0]=="f":
+                add_to_adjacency_dict = adjacency_dict_fac
 
-            if y in adjacency_dict_fac:
-                adjacency_dict_fac[y].append(x)
+            if x in add_to_adjacency_dict:
+                add_to_adjacency_dict[x].append((y,initial_message))
             else:
-                adjacency_dict_fac[y] = [x]
+                add_to_adjacency_dict[x] = [(y,initial_message)]
 
     return (adjacency_dict_var,adjacency_dict_fac)
 
@@ -120,10 +113,13 @@ def read_file_factor_graph(path_to_input_file):
 #channel_name_convention: (type)index_(type)index
 def message_pass_wrapper(incoming_message, input_function):
     node_id = current_process().name
-    # from_node_type = 
-    updated_node_cache = update_node_cache(incoming_message, node_id) #crash
+    updated_node_cache = update_node_cache(incoming_message, node_id) # I'm not sure why making new function for this
 
-    update_function = input_function
+    # update_function = input_function #?????
+
+    neighbor = NodeStateStore("redis").fetch_node(node_id,"neighbor")
+    # for to_node_index in neighbor:
+
     for channel_name in all_channels:
         new_outgoing_message = self.__compute_outgoing_message(update_function, updated_state, channel_name)
         self.__propagate_message(new_outgoing_message, channel_name)
@@ -133,6 +129,8 @@ def update_node_cache(incoming_message, node_id):
     updated_node_cache = NodeStateStore("redis").update_node(incoming_message, node_id)
     return updated_node_cache
 
+def compute_outgoing_message():
+    pass
 
 class FactorGraphService:
     def __init__(self):
@@ -157,12 +155,12 @@ class Edge:
 
 
 class Node:
-    def __init__(self, node_id, node_type, node_function, initial_node_message_cache, node_data, pubsub):
+    def __init__(self,node_id,node_type,node_function,initial_node_message_cache,node_data,pubsub):
         self.pubsub = pubsub
         self.state_store = NodeStateStore("redis")
-        self.state_store.create_node_state(node_id, initial_node_message_cache, node_type, node_data)
+        self.state_store.create_node_state(node_id,initial_node_message_cache,node_type,node_data)
         self.pubsub.register_publisher(node_id)
-        self.pubsub.register_subscriber(node_id, node_function)
+        self.pubsub.register_subscriber(node_id,node_function)
 
 
 
@@ -178,8 +176,8 @@ config = {
 
 path_to_input_file = "input.txt"
 try_fg = FactorGraph(path_to_input_file,config)
-mock_incoming_message = {'channel': b'f1_v2', 'data': 0.4, 'type': 'subscribe', 'pattern': None}
-updated_node_cache = update_node_cache(mock_incoming_message,"v2")
+# mock_incoming_message = {'channel': b'f1_v2', 'data': 0.4, 'type': 'subscribe', 'pattern': None}
+# updated_node_cache = update_node_cache(mock_incoming_message,"v2")
 
 
 
