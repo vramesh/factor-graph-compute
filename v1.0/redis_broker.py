@@ -4,7 +4,8 @@ from multiprocessing import Process, Manager, Array
 
 class RedisBroker:
     def __init__(self):
-        self.redis_main = redis.StrictRedis(host='localhost',port=6379, db=0, decode_responses=True)
+        # self.redis_main = redis.StrictRedis(host='localhost',port=6379, db=0, decode_responses=True)
+        self.redis_main = redis.Redis()
         self.publishers = set()
         self.channels = list()
         self.subscribers = dict()
@@ -17,7 +18,7 @@ class RedisBroker:
     def add_subscriber(self,subscriber_id, callback_function):
         if subscriber_id in self.subscribers:
             return "Need unique subscriber id"
-        new_subscriber = self.redis_main.pubsub()
+        new_subscriber = self.redis_main.pubsub(ignore_subscribe_messages=True)
         self.subscribers[subscriber_id] = {"redis_pubsub": new_subscriber,
                                            "callback_function": callback_function}
 
@@ -28,7 +29,7 @@ class RedisBroker:
         callback_function = self.subscribers[subscriber_id]["callback_function"]
         self.subscribers[subscriber_id]["redis_pubsub"].subscribe(**{channel_id: callback_function})
 
-    def publish(self,message, channel_id):
+    def publish(self, channel_id, message):
         self.redis_main.publish(channel_id, message)
 
     def start(self):
@@ -36,7 +37,10 @@ class RedisBroker:
             while True:
                 message = self.subscribers[subscriber_id]["redis_pubsub"].get_message()
                 if message:
-                    time.sleep(0.001)
+                    print("Got message! in " + subscriber_id + str(message))
+                # else:
+                #     print("waiting")
+                time.sleep(0.01)
 
         for subscriber_id in self.subscribers:
             process = Process(target=start_subscriber,
@@ -59,8 +63,6 @@ def test_pubsub_redis():
     redis.publish("first_try","c789")
     redis.publish("first_try","c789")
     redis.publish("first_try","c789")
-
-
 
 
 

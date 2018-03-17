@@ -10,9 +10,15 @@ ALGORITHM_TO_UPDATE_FUNCTIONS = \
     "page_rank": {
         "update_var": lambda state, messages, sender_id, recipient_id: 0 if state==0 else (messages["f"+sender_id[1:]]/state if sender_id[1:]!=recipient_id[1:] else 0) ,
         "update_fac": lambda state, messages, sender_id, recipient_id: sum(list(messages.values())) - messages["v"+sender_id[1:]] if sender_id[1:] == recipient_id[1:] else 0
+    },
+
+    "page_rank_fake": {
+        "update_var": lambda state, messages, sender_id, recipient_id: decrypt(messages[recipient_id])+1,
+        "update_fac": lambda state, messages, sender_id, recipient_id: decrypt(messages[recipient_id])+1
     }
 }
 
+decrypt = lambda x: float(x.decode("ascii")) if type(x) == bytes else x 
 
 toy_config = \
 {
@@ -35,6 +41,7 @@ class FactorGraph:
 
         self.initialize_nodes_and_edges() 
         self.pubsub.start()
+        time.sleep(0.1)
 
     def initialize_nodes_and_edges(self): 
         """
@@ -53,9 +60,9 @@ class FactorGraph:
             self.edges.append(edge)
 
         if self.algorithm == "page_rank": # this assume reading from the file which specifies factor graph structure
-            update_var_function  = ALGORITHM_TO_UPDATE_FUNCTIONS["page_rank"]["update_var"]
+            update_var_function  = ALGORITHM_TO_UPDATE_FUNCTIONS["page_rank_fake"]["update_var"]
             wrapper_var_function = lambda incoming_message: message_pass_wrapper(incoming_message, update_var_function)
-            update_fac_function  = ALGORITHM_TO_UPDATE_FUNCTIONS["page_rank"]["update_fac"]
+            update_fac_function  = ALGORITHM_TO_UPDATE_FUNCTIONS["page_rank_fake"]["update_fac"]
             wrapper_fac_function = lambda incoming_message: message_pass_wrapper(incoming_message, update_fac_function)
             (adjacency_dict_var,adjacency_dict_fac) = read_file_factor_graph(self.path_to_input_file) #{1:[2,3]}
             num_node = len(adjacency_dict_var)
@@ -75,13 +82,13 @@ class FactorGraph:
 
             for variable_id in adjacency_dict_var:
                 for (factor_id,initial_message) in adjacency_dict_var[variable_id]:
-                    channel_name = variable_id + factor_id
+                    channel_name = variable_id + "_" + factor_id
                     edge = Edge(variable_id,factor_id, channel_name, self.pubsub)
                     self.edges.append(edge)
 
             for factor_id in adjacency_dict_fac:
                 for (variable_id,initial_message) in adjacency_dict_fac[factor_id]:
-                    channel_name = factor_id + variable_id
+                    channel_name = factor_id + "_" + variable_id
                     edge = Edge(factor_id,variable_id, channel_name, self.pubsub)
                     self.edges.append(edge)
 
@@ -111,17 +118,22 @@ def read_file_factor_graph(path_to_input_file):
 
 #channel_name_convention: (type)index_(type)index
 def message_pass_wrapper(incoming_message, input_function):
-    node_id = current_process().name
+    # node_id = current_process().name
 
     # node_id = "f1" # mock 
 
+    node_id = incoming_message["channel"].decode("ascii").split("_")[1]
     updated_node_cache = update_node_cache(incoming_message, node_id) # I'm not sure why making new function for this
 
-    for to_node_id in list(updated_node_cache.keys()):
-        send_to_channel_name = node_id + "_" + to_node_id
-        new_outgoing_message = compute_outgoing_message(input_function,updated_node_cache,node_id,to_node_id)
-        print(new_outgoing_message)
-        propagate_message(new_outgoing_message, send_to_channel_name)
+    stop_countdown = NodeStateStore("redis").fetch_node(node_id,"stop_countdown")
+
+    if stop_countdown > 0:
+        for to_node_id in list(updated_node_cache.keys()):
+            send_to_channel_name = node_id + "_" + to_node_id
+            new_outgoing_message = compute_outgoing_message(input_function,updated_node_cache,node_id,to_node_id)
+            print(new_outgoing_message)
+            propagate_message(send_to_channel_name, new_outgoing_message)
+            NodeStateStore("redis").countdown_by_one(node_id)
 
     # for channel_name in all_channels:
     #     new_outgoing_message = self.__compute_outgoing_message(update_function, updated_state, channel_name)
@@ -137,8 +149,9 @@ def compute_outgoing_message(input_function,updated_node_cache,from_node_id,to_n
     new_outgoing_message = input_function(node_data, updated_node_cache,from_node_id,to_node_id)
     return new_outgoing_message
 
-def propagate_message(new_outgoing_message, channel_name):
-    pass
+def propagate_message(channel_name, new_outgoing_message):
+    redis = RedisBroker()
+    redis.publish(channel_name,new_outgoing_message)
 
 class FactorGraphService:
     def __init__(self):
@@ -151,7 +164,7 @@ class FactorGraphService:
     def run(self, factor_graph):
         #answer_dictionary = dict()
         redis = RedisBroker()
-        redis.publish("first_try","first_edge_bois")
+
         #return answer_dictionary
 
 
@@ -182,11 +195,15 @@ config = {
 # time.sleep(1)
 # FactorGraphService().run(trying)
 
-path_to_input_file = "input.txt"
-try_fg = FactorGraph(path_to_input_file,config)
-mock_incoming_message = {'channel': b'f0_v0', 'data': 0.4, 'type': 'subscribe', 'pattern': None}
-mock_incoming_message_2 = {'channel': b'v0_f1', 'data': 0.3, 'type': 'subscribe', 'pattern': None}
-message_pass_wrapper(mock_incoming_message_2, ALGORITHM_TO_UPDATE_FUNCTIONS["page_rank"]["update_fac"])
+def first_try(): 
+    path_to_input_file = "input.txt"
+    try_fg = FactorGraph(path_to_input_file,config)
+
+first_try()
+    
+# mock_incoming_message = {'channel': b'f0_v0', 'data': 0.4, 'type': 'subscribe', 'pattern': None}
+# mock_incoming_message_2 = {'channel': b'v0_f1', 'data': 0.3, 'type': 'subscribe', 'pattern': None}
+# message_pass_wrapper(mock_incoming_message_2, ALGORITHM_TO_UPDATE_FUNCTIONS["page_rank"]["update_fac"])
 # updated_node_cache = update_node_cache(mock_incoming_message,"v0")
 
 

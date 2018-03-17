@@ -1,6 +1,7 @@
 from multiprocessing import Manager
 from redis import StrictRedis, Redis
 import pickle as pickle
+import _pickle as cPickle
 import ast
 
 class NodeStateStore: #node state manager
@@ -19,6 +20,9 @@ class NodeStateStore: #node state manager
     def create_node_state(self, node_id, initial_messages, node_type, node_data):
         self.state_store_spec.create_node_state(node_id, initial_messages, node_type, node_data)
 
+    def countdown_by_one(self, node_id):
+        self.state_store_spec.countdown_by_one(node_id)
+
 
 class RedisNodeStateStore:
     def __init__(self):
@@ -26,7 +30,7 @@ class RedisNodeStateStore:
 
     def update_node_messages(self, message_to_be_cached, node_id):
         previous_message = self.get_data(node_id, "messages")
-        channel_name = self.decryptor(message_to_be_cached["channel"],is_string=True)
+        channel_name = str(message_to_be_cached["channel"])
         from_node = channel_name.split("_")[0]
         new_message = message_to_be_cached["data"]  # careful if it is binary or str
         previous_message[from_node] = new_message
@@ -34,14 +38,20 @@ class RedisNodeStateStore:
         self.set_data(node_id,to_be_set_message,"messages")
         return to_be_set_message
 
+    def countdown_by_one(self, node_id):
+        last_countdown = self.get_data(node_id,"stop_countdown")
+        last_countdown = last_countdown - 1
+        self.set_data(node_id, last_countdown, "stop_countdown")
+
     # def fetch_node_messages(self, node_id):
     #     redis = Redis()
     #     return pickle.loads(redis.hget(node_id, "messages"))
 
     def create_node_state(self, node_id, initial_messages, node_type, node_data):
         #id -> {"messages": , "type", "data"}
-        self.redis.hmset(node_id, {"messages": initial_messages, "node_type": node_type,
-            "node_data": node_data})
+        data_dict = {"messages": initial_messages, "node_type": node_type,
+            "node_data": node_data, "stop_countdown": 30}
+        self.redis.hmset(node_id, data_dict)
         return True
 
     def get_data(self,node_id,field,is_string=False): # pickle back to str or dict 
@@ -61,6 +71,7 @@ class RedisNodeStateStore:
             return_message = str_data
         else:
             return_message = ast.literal_eval(str_data)
+
         return return_message
 
 
