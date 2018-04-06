@@ -38,9 +38,9 @@ class FactorGraph:
             algo_to_use = "max_product"
 
         update_var_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[algo_to_use]["update_var"]
-        wrapper_var_function = lambda incoming_message: message_pass_wrapper_for_redis(incoming_message, update_var_function)
+        wrapper_var_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_var_function)
         update_fac_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[algo_to_use]["update_fac"]
-        wrapper_fac_function = lambda incoming_message: message_pass_wrapper_for_redis(incoming_message, update_fac_function)
+        wrapper_fac_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_fac_function)
 
         self = convert_adjacency_list_input_file_to_pagerank_factor_graph_and_register_with_pubsub(self.path_to_input_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
     
@@ -105,39 +105,42 @@ def read_file_factor_graph(path_to_input_file):
 
 
 
-####### PROPAGATION FUNCTIONS/REDIS FOR NOW #######
+class RedisCallbackClass:
+    def __init__(self):
+        pass
 
-#is the callback functions for redis to run on pubsub
-#message format from redis: {'pattern': None, 'type': 'subscribe', 'channel': 'my-second-channel', 'data': 1L}
-#entirely dependent on redis
-def message_pass_wrapper_for_redis(incoming_message, input_function):
-    node_id = incoming_message["channel"].decode("ascii").split("_")[1]
-    updated_node_cache = update_node_cache(incoming_message, node_id) # I'm not sure why making new function for this
+    def message_pass_wrapper_for_redis(incoming_message, input_function):
+        #is the callback functions for redis to run on pubsub
+        #message format from redis: {'pattern': None, 'type': 'subscribe', 'channel': 'my-second-channel', 'data': 1L}
+        
+        node_id = incoming_message["channel"].decode("ascii").split("_")[1]
+        updated_node_cache = update_node_cache(incoming_message, node_id) # I'm not sure why making new function for this
 
-    stop_countdown = NodeStateStore("redis").fetch_node(node_id,"stop_countdown")
+        stop_countdown = NodeStateStore("redis").fetch_node(node_id,"stop_countdown")
 
-    if stop_countdown > 0:
-        for to_node_id in list(updated_node_cache.keys()):
-            send_to_channel_name = node_id + "_" + to_node_id
-            new_outgoing_message = compute_outgoing_message(input_function,updated_node_cache,node_id,to_node_id)
-            propagate_message(send_to_channel_name, new_outgoing_message)
-            NodeStateStore("redis").countdown_by_one(node_id)
+        if stop_countdown > 0:
+            for to_node_id in list(updated_node_cache.keys()):
+                send_to_channel_name = node_id + "_" + to_node_id
+                new_outgoing_message = compute_outgoing_message(input_function,updated_node_cache,node_id,to_node_id)
+                propagate_message(send_to_channel_name, new_outgoing_message)
+                NodeStateStore("redis").countdown_by_one(node_id)
 
-def update_node_cache(incoming_message, node_id):
-    updated_node_cache = NodeStateStore("redis").update_node(incoming_message, node_id)
-    return updated_node_cache
+    def update_node_cache(incoming_message, node_id):
+        updated_node_cache = NodeStateStore("redis").update_node(incoming_message, node_id)
+        return updated_node_cache
 
-def compute_outgoing_message(input_function,updated_node_cache,from_node_id,to_node_id):
-    node_data = NodeStateStore("redis").fetch_node(from_node_id,"node_data")
-    new_outgoing_message = input_function(node_data, updated_node_cache,from_node_id,to_node_id)
-    return new_outgoing_message
+    def compute_outgoing_message(input_function,updated_node_cache,from_node_id,to_node_id):
+        node_data = NodeStateStore("redis").fetch_node(from_node_id,"node_data")
+        new_outgoing_message = input_function(node_data, updated_node_cache,from_node_id,to_node_id)
+        return new_outgoing_message
 
-def propagate_message(channel_name, new_outgoing_message):
-    #no acccess to pubsub so directly call redisbroker()
-    redis = RedisBroker()
-    redis.publish(channel_name,new_outgoing_message)
+    def propagate_message(channel_name, new_outgoing_message):
+        #no acccess to pubsub so directly call redisbroker()
+        redis = RedisBroker()
+        redis.publish(channel_name,new_outgoing_message)
 
-###### PUBSUB END ####
+
+
 
 class FactorGraphService:
     def __init__(self):
@@ -191,9 +194,9 @@ class Node:
 
 if __name__ == "__main__":
     config = {
-    "algorithm": "page_rank",
-    "pubsub_choice": "redis",
-    "synchronous": "asynchronous"
+        "algorithm": "page_rank",
+        "pubsub_choice": "redis",
+        "synchronous": "asynchronous"
     }
 
     path_to_input_file = "pagerank_factor_graph_example_adjadjacency_list.txt"
