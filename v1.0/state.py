@@ -51,7 +51,7 @@ class RedisNodeStateStore:
     def create_node_state(self, node_id, initial_messages, node_type, node_data):
         #id -> {"messages": , "type", "data"}
         data_dict = {"messages": initial_messages, "node_type": node_type,
-            "node_data": node_data, "stop_countdown": 500}
+            "node_data": node_data, "stop_countdown": 5}
         self.redis.hmset(node_id, data_dict)
         return True
 
