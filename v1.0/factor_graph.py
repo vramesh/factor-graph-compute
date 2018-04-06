@@ -11,21 +11,18 @@ import time
 decrypt = lambda x: float(x.decode("ascii")) if type(x) == bytes else x 
 
 
-
-
 class FactorGraph:
     def __init__(self, path_to_input_file=None, config={}):
         self.factor_nodes = list() 
         self.variable_nodes = list() 
         self.edges = list() 
         self.pubsub = PubSub(config['pubsub_choice'])
-
         self.config = config
         self.algorithm = config["algorithm"]
         self.path_to_input_file = path_to_input_file
         self.initialize_nodes_and_edges() 
         self.pubsub.start()
-        time.sleep(0.1) #why sleep here
+        time.sleep(0.1)
 
     def initialize_nodes_and_edges(self): 
         """
@@ -41,42 +38,24 @@ class FactorGraph:
             algo_to_use = "max_product"
 
         update_var_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[algo_to_use]["update_var"]
-        wrapper_var_function = lambda incoming_message: message_pass_wrapper(incoming_message, update_var_function)
+        wrapper_var_function = lambda incoming_message: message_pass_wrapper_for_redis(incoming_message, update_var_function)
         update_fac_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[algo_to_use]["update_fac"]
-        wrapper_fac_function = lambda incoming_message: message_pass_wrapper(incoming_message, update_fac_function)
+        wrapper_fac_function = lambda incoming_message: message_pass_wrapper_for_redis(incoming_message, update_fac_function)
 
         self = convert_adjacency_list_input_file_to_pagerank_factor_graph_and_register_with_pubsub(self.path_to_input_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
-        
+    
+    #here has no propagate_message
+    def initial_receive(self):
+        for node in self.variable_nodes:
+            node.receive_messages_from_neighbors()
 
-
-
-
-#document format of incoming_message??
-#this is the problematic function
-def message_pass_wrapper(incoming_message, input_function):
-    node_id = incoming_message["channel"].decode("ascii").split("_")[1]
-    updated_node_cache = update_node_cache(incoming_message, node_id) # I'm not sure why making new function for this
-
-    stop_countdown = NodeStateStore("redis").fetch_node(node_id,"stop_countdown")
-
-    if stop_countdown > 0:
-        for to_node_id in list(updated_node_cache.keys()):
-            send_to_channel_name = node_id + "_" + to_node_id
-            new_outgoing_message = compute_outgoing_message(input_function,updated_node_cache,node_id,to_node_id)
-            propagate_message(send_to_channel_name, new_outgoing_message)
-            NodeStateStore("redis").countdown_by_one(node_id)
-
-
- 
-
-
+#manual populate nodes function
 def convert_adjacency_list_input_file_to_pagerank_factor_graph_and_register_with_pubsub(path_to_input_file, pubsub, wrapper_var_function, wrapper_fac_function, factor_graph):
     (adjacency_dict_var,adjacency_dict_fac) = read_file_factor_graph(path_to_input_file) #{1:[2,3]}
     num_node = len(adjacency_dict_var)
 
     for variable_id in adjacency_dict_var:
         initial_messages_var = dict(adjacency_dict_var[variable_id])
-        print(initial_messages_var)
         node_data = len(adjacency_dict_var[variable_id])-1
         variable_node = Node(variable_id,"variable",wrapper_var_function,initial_messages_var,node_data,pubsub)
         factor_graph.variable_nodes.append(variable_node)
@@ -126,43 +105,46 @@ def read_file_factor_graph(path_to_input_file):
 
 
 
-    
+####### PROPAGATION FUNCTIONS/REDIS FOR NOW #######
+
+#is the callback functions for redis to run on pubsub
+#message format from redis: {'pattern': None, 'type': 'subscribe', 'channel': 'my-second-channel', 'data': 1L}
+#entirely dependent on redis
+def message_pass_wrapper_for_redis(incoming_message, input_function):
+    node_id = incoming_message["channel"].decode("ascii").split("_")[1]
+    updated_node_cache = update_node_cache(incoming_message, node_id) # I'm not sure why making new function for this
+
+    stop_countdown = NodeStateStore("redis").fetch_node(node_id,"stop_countdown")
+
+    if stop_countdown > 0:
+        for to_node_id in list(updated_node_cache.keys()):
+            send_to_channel_name = node_id + "_" + to_node_id
+            new_outgoing_message = compute_outgoing_message(input_function,updated_node_cache,node_id,to_node_id)
+            propagate_message(send_to_channel_name, new_outgoing_message)
+            NodeStateStore("redis").countdown_by_one(node_id)
 
 def update_node_cache(incoming_message, node_id):
     updated_node_cache = NodeStateStore("redis").update_node(incoming_message, node_id)
     return updated_node_cache
 
 def compute_outgoing_message(input_function,updated_node_cache,from_node_id,to_node_id):
-    print("im here")
     node_data = NodeStateStore("redis").fetch_node(from_node_id,"node_data")
-    print("node data ", node_data)
     new_outgoing_message = input_function(node_data, updated_node_cache,from_node_id,to_node_id)
     return new_outgoing_message
 
 def propagate_message(channel_name, new_outgoing_message):
+    #no acccess to pubsub so directly call redisbroker()
     redis = RedisBroker()
     redis.publish(channel_name,new_outgoing_message)
 
+###### PUBSUB END ####
 
 class FactorGraphService:
     def __init__(self):
         pass
 
-    def create(self, path_to_input_file, config):
-        factor_graph = FactorGraph(path_to_input_file, config)
-        return factor_graph
-
     def run(self, factor_graph):
-        #answer_dictionary = dict()
-        #        redis = RedisBroker()
-
-        #return answer_dictionary
-
-        #pseudo
-        print("hib")
-        for variable_node in factor_graph.variable_nodes:
-            propagate_message('v0_f0', 'hello')
-
+        factor_graph.initial_receive()
 
 class Edge:
     def __init__(self, from_node_id, to_node_id, edge_id, pubsub):
@@ -173,11 +155,33 @@ class Edge:
 
 class Node:
     def __init__(self,node_id,node_type,node_function,initial_node_message_cache,node_data,pubsub):
+        self.node_id = node_id
+        self.node_type = node_type
+        self.node_data = node_data
+        self.initial_node_message_cache = initial_node_message_cache
+
         self.pubsub = pubsub
         self.state_store = NodeStateStore("redis")
         self.state_store.create_node_state(node_id,initial_node_message_cache,node_type,node_data)
         self.pubsub.register_publisher(node_id)
         self.pubsub.register_subscriber(node_id,node_function)
+
+    def get_initial_message_from_sender(self,sender):
+        return self.initial_node_message_cache[sender]
+
+    def get_sender_list(self):
+        return self.initial_node_message_cache.keys()
+
+    #nodes publish to self
+    #initial
+    def receive_messages_from_neighbors(self):
+        #force all senders to publish
+
+        for sender in self.initial_node_message_cache:
+            channel_id = sender + "_" + self.node_id
+            self.pubsub.publish(channel_id, self.initial_node_message_cache[sender])
+
+        #for the sake of initializing pubsub running
 
 
 
@@ -187,25 +191,12 @@ class Node:
 
 if __name__ == "__main__":
     config = {
-    "algorithm": "max_product",
+    "algorithm": "page_rank",
     "pubsub_choice": "redis",
     "synchronous": "asynchronous"
     }
 
-    path_to_input_file = "test_input.txt"
-    try_fg = FactorGraph(path_to_input_file, config)
-    service = FactorGraphService()
-    service.run(try_fg)
-
-
-def first_try():
-    config = {
-    "algorithm": "max_product",
-    "pubsub_choice": "redis",
-    "synchronous": "asynchronous"
-    }
-
-    path_to_input_file = "test_input.txt"
+    path_to_input_file = "pagerank_factor_graph_example_adjadjacency_list.txt"
     try_fg = FactorGraph(path_to_input_file, config)
     service = FactorGraphService()
     service.run(try_fg)
