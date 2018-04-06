@@ -27,3 +27,7 @@ class PubSub:  # how to map id to object?
     #this is called during FG.create() after initialization
     def start(self):
         self.broker.start()
+
+    def initial_publish(self, channel_id, message): # use to publish initial message only
+        print(self.broker.channels)
+        self.broker.publish(channel_id, message)

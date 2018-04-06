@@ -48,6 +48,7 @@ class RedisBroker:
             process.daemon = True
             process.start()
 
+
 def test_pubsub_redis():
     redis = RedisBroker()
     redis.add_publisher("p1")
