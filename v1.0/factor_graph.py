@@ -42,6 +42,7 @@ class FactorGraph:
         self.initialize_nodes_and_edges() 
         self.pubsub.start()
         time.sleep(0.1)
+        self.initial_publish()
 
     def initialize_nodes_and_edges(self): 
         """
@@ -65,18 +66,17 @@ class FactorGraph:
             update_fac_function  = ALGORITHM_TO_UPDATE_FUNCTIONS["page_rank_fake"]["update_fac"]
             wrapper_fac_function = lambda incoming_message: message_pass_wrapper(incoming_message, update_fac_function)
             (adjacency_dict_var,adjacency_dict_fac) = read_file_factor_graph(self.path_to_input_file) #{1:[2,3]}
-            num_node = len(adjacency_dict_var)
+            num_node = len(adjacency_dict_var) # on the assumption that all nodes have edge adjacent to
 
             for variable_id in adjacency_dict_var:
-                # variable_name = "v" + str(variable_index)
                 initial_messages_var = dict(adjacency_dict_var[variable_id])
-                node_data = len(adjacency_dict_var[variable_id])-1
+                node_data = len(adjacency_dict_var[variable_id])-1 # state of variable node (= |N_out(v_i)|)
                 variable_node = Node(variable_id,"variable",wrapper_var_function,initial_messages_var,node_data,self.pubsub)
                 self.variable_nodes.append(variable_node)
 
             for factor_id in adjacency_dict_fac:
                 initial_messages_fac = dict(adjacency_dict_fac[factor_id])
-                node_data = 0
+                node_data = 0  # state of factor node (= null)
                 factor_node = Node(factor_id,"factor",wrapper_fac_function,initial_messages_fac,node_data,self.pubsub)
                 self.factor_nodes.append(factor_node)
 
@@ -92,6 +92,9 @@ class FactorGraph:
                     edge = Edge(factor_id,variable_id, channel_name, self.pubsub)
                     self.edges.append(edge)
 
+    def initial_publish(self):
+        for node in self.variable_nodes:
+            node.publish_initial_message_to();
 
 
 def read_file_factor_graph(path_to_input_file): 
@@ -118,10 +121,6 @@ def read_file_factor_graph(path_to_input_file):
 
 #channel_name_convention: (type)index_(type)index
 def message_pass_wrapper(incoming_message, input_function):
-    # node_id = current_process().name
-
-    # node_id = "f1" # mock 
-
     node_id = incoming_message["channel"].decode("ascii").split("_")[1]
     updated_node_cache = update_node_cache(incoming_message, node_id) # I'm not sure why making new function for this
 
@@ -146,7 +145,7 @@ def update_node_cache(incoming_message, node_id):
 
 def compute_outgoing_message(input_function,updated_node_cache,from_node_id,to_node_id):
     node_data = NodeStateStore("redis").fetch_node(from_node_id,"node_data")
-    new_outgoing_message = input_function(node_data, updated_node_cache,from_node_id,to_node_id)
+    new_outgoing_message = input_function(node_data,updated_node_cache,from_node_id,to_node_id)
     return new_outgoing_message
 
 def propagate_message(channel_name, new_outgoing_message):
@@ -177,11 +176,28 @@ class Edge:
 
 class Node:
     def __init__(self,node_id,node_type,node_function,initial_node_message_cache,node_data,pubsub):
+        self.node_id = node_id
+        self.node_type = node_type
+        self.node_data = node_data
+        self.initial_node_message_cache = initial_node_message_cache
+
         self.pubsub = pubsub
         self.state_store = NodeStateStore("redis")
         self.state_store.create_node_state(node_id,initial_node_message_cache,node_type,node_data)
         self.pubsub.register_publisher(node_id)
         self.pubsub.register_subscriber(node_id,node_function)
+
+    def get_initial_message_from_sender(self, sender):
+        return self.initial_node_message_cache[sender]
+
+    def get_sender_list(self):
+        return self.initial_node_message_cache.keys()
+
+    def publish_initial_message_to(self):
+        for sender in self.initial_node_message_cache:
+            channel_id = sender + "_" + self.node_id
+            self.pubsub.initial_publish(channel_id, self.initial_node_message_cache[sender])
+
 
 
 
