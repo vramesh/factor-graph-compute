@@ -1,5 +1,6 @@
 from max_product import update_var_mp
 
+decrypt = lambda x: float(x.decode("ascii")) if type(x) == bytes else x 
 
 def print_bye(a=None, b=None, c=None, d=None):
     print("bye")

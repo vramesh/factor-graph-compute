@@ -39,9 +39,10 @@ class RedisNodeStateStore:
         return to_be_set_message
 
     def countdown_by_one(self, node_id):
-        last_countdown = self.get_data(node_id,"stop_countdown")
-        last_countdown = last_countdown - 1
-        self.set_data(node_id, last_countdown, "stop_countdown")
+        self.redis.hincrby(node_id, 'stop_countdown', -1)
+        #last_countdown = self.get_data(node_id,"stop_countdown")
+        #last_countdown = last_countdown - 1
+        #self.set_data(node_id, last_countdown, "stop_countdown")
 
     # def fetch_node_messages(self, node_id):
     #     redis = Redis()
@@ -50,7 +51,7 @@ class RedisNodeStateStore:
     def create_node_state(self, node_id, initial_messages, node_type, node_data):
         #id -> {"messages": , "type", "data"}
         data_dict = {"messages": initial_messages, "node_type": node_type,
-            "node_data": node_data, "stop_countdown": 30}
+            "node_data": node_data, "stop_countdown": 500}
         self.redis.hmset(node_id, data_dict)
         return True
 
