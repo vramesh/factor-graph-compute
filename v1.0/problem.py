@@ -19,3 +19,4 @@ class Problem:
         factor_graph = FactorGraphService.create(path_to_input_file, config)
         answer_dictionary = FactorGraphService.run(factor_graph)
         return answer_dictionary
+

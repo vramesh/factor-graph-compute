@@ -3,33 +3,18 @@ from Pubsub import PubSub
 from redis_broker import RedisBroker
 from state import RedisNodeStateStore
 from multiprocessing import Process, Manager, Array, current_process
+from node_update_functions import ALGORITHM_TO_UPDATE_FUNCTIONS
+from pagerank_converter import convert_adjacency_list_input_file_to_pagerank_factor_graph_and_register_with_pubsub
 import time
 
-ALGORITHM_TO_UPDATE_FUNCTIONS = \
-{
-    "page_rank": {
-        "update_var": lambda state, messages, sender_id, recipient_id: 0 if state==0 else (messages["f"+sender_id[1:]]/state if sender_id[1:]!=recipient_id[1:] else 0) ,
-        "update_fac": lambda state, messages, sender_id, recipient_id: sum(list(messages.values())) - messages["v"+sender_id[1:]] if sender_id[1:] == recipient_id[1:] else 0
-    },
-
-    "page_rank_fake": {
-        "update_var": lambda state, messages, sender_id, recipient_id: decrypt(messages[recipient_id])+1,
-        "update_fac": lambda state, messages, sender_id, recipient_id: decrypt(messages[recipient_id])+1
-    }
-}
 
 decrypt = lambda x: float(x.decode("ascii")) if type(x) == bytes else x 
 
-toy_config = \
-{
-    "algorithm": "hello_world",
-    "pubsub_choice": "redis",
-    "synchronous": "asynchronous"
-}
+
 
 
 class FactorGraph:
-    def __init__(self, path_to_input_file, config):
+    def __init__(self, path_to_input_file=None, config={}):
         self.factor_nodes = list() 
         self.variable_nodes = list() 
         self.edges = list() 
@@ -38,10 +23,9 @@ class FactorGraph:
         self.config = config
         self.algorithm = config["algorithm"]
         self.path_to_input_file = path_to_input_file
-
         self.initialize_nodes_and_edges() 
         self.pubsub.start()
-        time.sleep(0.1)
+        time.sleep(0.1) #why sleep here
 
     def initialize_nodes_and_edges(self): 
         """
@@ -49,49 +33,73 @@ class FactorGraph:
         currently manually makes nodes but should read input file
         """
 
-        #logic for updateing update_function_custom argument
-        if self.algorithm == "hello_world":
-            simple_message_pass = lambda incoming_message: message_pass_wrapper(incoming_message, lambda x: print("hello" + str(incoming_message) ))
-            node_1 = Node(1, "variable", simple_message_pass, "hello", self.pubsub)
-            node_2 = Node(2, "factor", simple_message_pass, "goodbye", self.pubsub)
-            edge = Edge(1, 2, "first_edge_bois", self.pubsub)
-            self.variable_nodes.append(node_1)
-            self.factor_nodes.append(node_2)
-            self.edges.append(edge)
+        algo_to_use = "None"
 
         if self.algorithm == "page_rank": # this assume reading from the file which specifies factor graph structure
-            update_var_function  = ALGORITHM_TO_UPDATE_FUNCTIONS["page_rank_fake"]["update_var"]
-            wrapper_var_function = lambda incoming_message: message_pass_wrapper(incoming_message, update_var_function)
-            update_fac_function  = ALGORITHM_TO_UPDATE_FUNCTIONS["page_rank_fake"]["update_fac"]
-            wrapper_fac_function = lambda incoming_message: message_pass_wrapper(incoming_message, update_fac_function)
-            (adjacency_dict_var,adjacency_dict_fac) = read_file_factor_graph(self.path_to_input_file) #{1:[2,3]}
-            num_node = len(adjacency_dict_var)
+            algo_to_use = "page_rank_fake"
+        elif self.algorithm == "max_product":
+            algo_to_use = "max_product"
 
-            for variable_id in adjacency_dict_var:
-                # variable_name = "v" + str(variable_index)
-                initial_messages_var = dict(adjacency_dict_var[variable_id])
-                node_data = len(adjacency_dict_var[variable_id])-1
-                variable_node = Node(variable_id,"variable",wrapper_var_function,initial_messages_var,node_data,self.pubsub)
-                self.variable_nodes.append(variable_node)
+        update_var_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[algo_to_use]["update_var"]
+        wrapper_var_function = lambda incoming_message: message_pass_wrapper(incoming_message, update_var_function)
+        update_fac_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[algo_to_use]["update_fac"]
+        wrapper_fac_function = lambda incoming_message: message_pass_wrapper(incoming_message, update_fac_function)
 
-            for factor_id in adjacency_dict_fac:
-                initial_messages_fac = dict(adjacency_dict_fac[factor_id])
-                node_data = 0
-                factor_node = Node(factor_id,"factor",wrapper_fac_function,initial_messages_fac,node_data,self.pubsub)
-                self.factor_nodes.append(factor_node)
+        self = convert_adjacency_list_input_file_to_pagerank_factor_graph_and_register_with_pubsub(self.path_to_input_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
+        
 
-            for variable_id in adjacency_dict_var:
-                for (factor_id,initial_message) in adjacency_dict_var[variable_id]:
-                    channel_name = variable_id + "_" + factor_id
-                    edge = Edge(variable_id,factor_id, channel_name, self.pubsub)
-                    self.edges.append(edge)
 
-            for factor_id in adjacency_dict_fac:
-                for (variable_id,initial_message) in adjacency_dict_fac[factor_id]:
-                    channel_name = factor_id + "_" + variable_id
-                    edge = Edge(factor_id,variable_id, channel_name, self.pubsub)
-                    self.edges.append(edge)
 
+
+#document format of incoming_message??
+#this is the problematic function
+def message_pass_wrapper(incoming_message, input_function):
+    node_id = incoming_message["channel"].decode("ascii").split("_")[1]
+    updated_node_cache = update_node_cache(incoming_message, node_id) # I'm not sure why making new function for this
+
+    stop_countdown = NodeStateStore("redis").fetch_node(node_id,"stop_countdown")
+
+    if stop_countdown > 0:
+        for to_node_id in list(updated_node_cache.keys()):
+            send_to_channel_name = node_id + "_" + to_node_id
+            new_outgoing_message = compute_outgoing_message(input_function,updated_node_cache,node_id,to_node_id)
+            propagate_message(send_to_channel_name, new_outgoing_message)
+            NodeStateStore("redis").countdown_by_one(node_id)
+
+
+ 
+
+
+def convert_adjacency_list_input_file_to_pagerank_factor_graph_and_register_with_pubsub(path_to_input_file, pubsub, wrapper_var_function, wrapper_fac_function, factor_graph):
+    (adjacency_dict_var,adjacency_dict_fac) = read_file_factor_graph(path_to_input_file) #{1:[2,3]}
+    num_node = len(adjacency_dict_var)
+
+    for variable_id in adjacency_dict_var:
+        initial_messages_var = dict(adjacency_dict_var[variable_id])
+        print(initial_messages_var)
+        node_data = len(adjacency_dict_var[variable_id])-1
+        variable_node = Node(variable_id,"variable",wrapper_var_function,initial_messages_var,node_data,pubsub)
+        factor_graph.variable_nodes.append(variable_node)
+
+    for factor_id in adjacency_dict_fac:
+        initial_messages_fac = dict(adjacency_dict_fac[factor_id])
+        node_data = 0
+        factor_node = Node(factor_id,"factor",wrapper_fac_function,initial_messages_fac,node_data,pubsub)
+        factor_graph.factor_nodes.append(factor_node)
+
+    for variable_id in adjacency_dict_var:
+        for (factor_id,initial_message) in adjacency_dict_var[variable_id]:
+            channel_name = variable_id + "_" + factor_id
+            edge = Edge(variable_id,factor_id, channel_name, pubsub)
+            factor_graph.edges.append(edge)
+
+    for factor_id in adjacency_dict_fac:
+        for (variable_id,initial_message) in adjacency_dict_fac[factor_id]:
+            channel_name = factor_id + "_" + variable_id
+            edge = Edge(factor_id,variable_id, channel_name, pubsub)
+            factor_graph.edges.append(edge)
+
+    return factor_graph
 
 
 def read_file_factor_graph(path_to_input_file): 
@@ -116,28 +124,8 @@ def read_file_factor_graph(path_to_input_file):
     return (adjacency_dict_var,adjacency_dict_fac)
 
 
-#channel_name_convention: (type)index_(type)index
-def message_pass_wrapper(incoming_message, input_function):
-    # node_id = current_process().name
 
-    # node_id = "f1" # mock 
 
-    node_id = incoming_message["channel"].decode("ascii").split("_")[1]
-    updated_node_cache = update_node_cache(incoming_message, node_id) # I'm not sure why making new function for this
-
-    stop_countdown = NodeStateStore("redis").fetch_node(node_id,"stop_countdown")
-
-    if stop_countdown > 0:
-        for to_node_id in list(updated_node_cache.keys()):
-            send_to_channel_name = node_id + "_" + to_node_id
-            new_outgoing_message = compute_outgoing_message(input_function,updated_node_cache,node_id,to_node_id)
-            print(new_outgoing_message)
-            propagate_message(send_to_channel_name, new_outgoing_message)
-            NodeStateStore("redis").countdown_by_one(node_id)
-
-    # for channel_name in all_channels:
-    #     new_outgoing_message = self.__compute_outgoing_message(update_function, updated_state, channel_name)
-    #     self.__propagate_message(new_outgoing_message, channel_name)
     
 
 def update_node_cache(incoming_message, node_id):
@@ -145,13 +133,16 @@ def update_node_cache(incoming_message, node_id):
     return updated_node_cache
 
 def compute_outgoing_message(input_function,updated_node_cache,from_node_id,to_node_id):
+    print("im here")
     node_data = NodeStateStore("redis").fetch_node(from_node_id,"node_data")
+    print("node data ", node_data)
     new_outgoing_message = input_function(node_data, updated_node_cache,from_node_id,to_node_id)
     return new_outgoing_message
 
 def propagate_message(channel_name, new_outgoing_message):
     redis = RedisBroker()
     redis.publish(channel_name,new_outgoing_message)
+
 
 class FactorGraphService:
     def __init__(self):
@@ -163,9 +154,14 @@ class FactorGraphService:
 
     def run(self, factor_graph):
         #answer_dictionary = dict()
-        redis = RedisBroker()
+        #        redis = RedisBroker()
 
         #return answer_dictionary
+
+        #pseudo
+        print("hib")
+        for variable_node in factor_graph.variable_nodes:
+            propagate_message('v0_f0', 'hello')
 
 
 class Edge:
@@ -186,40 +182,34 @@ class Node:
 
 
 
-config = {
-    "algorithm": "page_rank",
+
+    
+
+if __name__ == "__main__":
+    config = {
+    "algorithm": "max_product",
     "pubsub_choice": "redis",
     "synchronous": "asynchronous"
-}
-# trying = FactorGraphService().create(None, config)
-# time.sleep(1)
-# FactorGraphService().run(trying)
+    }
 
-def first_try(): 
-    path_to_input_file = "input.txt"
-    try_fg = FactorGraph(path_to_input_file,config)
-
-first_try()
-    
-# mock_incoming_message = {'channel': b'f0_v0', 'data': 0.4, 'type': 'subscribe', 'pattern': None}
-# mock_incoming_message_2 = {'channel': b'v0_f1', 'data': 0.3, 'type': 'subscribe', 'pattern': None}
-# message_pass_wrapper(mock_incoming_message_2, ALGORITHM_TO_UPDATE_FUNCTIONS["page_rank"]["update_fac"])
-# updated_node_cache = update_node_cache(mock_incoming_message,"v0")
+    path_to_input_file = "test_input.txt"
+    try_fg = FactorGraph(path_to_input_file, config)
+    service = FactorGraphService()
+    service.run(try_fg)
 
 
+def first_try():
+    config = {
+    "algorithm": "max_product",
+    "pubsub_choice": "redis",
+    "synchronous": "asynchronous"
+    }
+
+    path_to_input_file = "test_input.txt"
+    try_fg = FactorGraph(path_to_input_file, config)
+    service = FactorGraphService()
+    service.run(try_fg)
 
 
 
 
-'''
-def __update_state(self, incoming_message):
-    new_full_state = self.node_message_cache.update(incoming_message, self.node_id)
-    return new_full_state
-
-def __compute_outgoing_message(self, updated_state, channel_name):
-    new_outgoing_message = ""  # need callback function here, which in turn need permanent state, all current messages, so node_message_cache need to send it here?
-    return new_outgoing_message
-
-def __propagate_message(self, new_outgoing_message):
-    self.publisher.publish(new_outgoing_message)
-'''
