@@ -1,4 +1,4 @@
-from max_product import update_var_mp
+# from max_product import update_var_mp
 
 decrypt = lambda x: float(x.decode("ascii")) if type(x) == bytes else x 
 

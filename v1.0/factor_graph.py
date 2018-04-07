@@ -206,7 +206,7 @@ def help():
     path_to_input_file = "pagerank_factor_graph_example_adjadjacency_list.txt"
     try_fg = FactorGraph(path_to_input_file, config)
     service = FactorGraphService()
-    #service.run(try_fg)
+    service.run(try_fg)
 
 
 
