@@ -1,14 +1,10 @@
 from multiprocessing import Manager
 from redis import StrictRedis, Redis
-import pickle as pickle
-import _pickle as cPickle
 import ast
 
 class NodeStateStore: #node state manager
     def __init__(self, state_store_spec):
-        if state_store_spec == "dict":
-            self.state_store_spec = DictNodeStateStore()
-        elif state_store_spec == "redis":
+        if state_store_spec == "redis":
             self.state_store_spec = RedisNodeStateStore()
 
     def update_node(self, incoming_message, node_id):
@@ -41,18 +37,11 @@ class RedisNodeStateStore:
 
     def countdown_by_one(self, node_id):
         self.redis.hincrby(node_id, 'stop_countdown', -1)
-        #last_countdown = self.get_data(node_id,"stop_countdown")
-        #last_countdown = last_countdown - 1
-        #self.set_data(node_id, last_countdown, "stop_countdown")
-
-    # def fetch_node_messages(self, node_id):
-    #     redis = Redis()
-    #     return pickle.loads(redis.hget(node_id, "messages"))
 
     def create_node_state(self, node_id, initial_messages, node_type, node_data):
         #id -> {"messages": , "type", "data"}
         data_dict = {"messages": initial_messages, "node_type": node_type,
-            "node_data": node_data, "stop_countdown": 14}
+            "node_data": node_data, "stop_countdown": 1000} #14
         self.redis.hmset(node_id, data_dict)
         return True
 
@@ -66,7 +55,7 @@ class RedisNodeStateStore:
 
     def decryptor(self,data,is_string=False):
         if type(data) == bytes:
-            str_data = data.decode("ascii")
+            str_data = data.decode("ascii") 
         else:
             str_data = data
         if is_string:

@@ -34,12 +34,11 @@ class RedisBroker:
         r = redis.Redis()
         self.subscribers[subscriber_id]["redis_pubsub"].subscribe(**{channel_id: callback_function})
 
-
+    def decrypt(self, x):
+        return str(x.decode("ascii")) if type(x) == bytes else x 
 
     def publish(self, channel_id, message):
-        print(channel_id)
-        print(channel_id in self.redis_pubsub_object.channels)
-        self.redis_main.publish(channel_id, message)
+        self.redis_main.publish(self.decrypt(channel_id), str(message).encode('ascii'))
 
     def start(self):
         def start_subscriber(subscriber_id):
@@ -58,22 +57,6 @@ class RedisBroker:
             #        args=(subscriber_id,))
             #process.daemon = True
             process.start()
-
-def test_pubsub_redis():
-    redis = RedisBroker()
-    redis.add_publisher("p1")
-    redis.add_publisher("p2")
-    redis.add_subscriber("s1",lambda x: print("hello"))
-    redis.add_subscriber("s2",lambda x: print("bye"))
-    redis.add_subscription("s1","c789")
-    redis.add_subscription("s2","c789")
-    redis.start()
-    time.sleep(0.1)
-    redis.publish("first_try","c789")
-    redis.publish("first_try","c789")
-    redis.publish("first_try","c789")
-    redis.publish("first_try","c789")
-    redis.publish("first_try","c789")
 
 
 

@@ -1,5 +1,3 @@
-# from max_product import update_var_mp
-
 decrypt = lambda x: float(x.decode("ascii")) if type(x) == bytes else x 
 
 def print_bye(a=None, b=None, c=None, d=None):
@@ -16,12 +14,12 @@ ALGORITHM_TO_UPDATE_FUNCTIONS = \
     },
 
     "page_rank_fake": {
-        "update_var": lambda state, messages, sender_id, recipient_id: decrypt(messages[recipient_id])+1,
-        "update_fac": lambda state, messages, sender_id, recipient_id: decrypt(messages[recipient_id])+1
+        "update_var": lambda state, messages, sender_id, recipient_id: messages[recipient_id]+1,
+        "update_fac": lambda state, messages, sender_id, recipient_id: messages[recipient_id]+1
     },
 
     "max_product": {
-        "update_var": print_hi,#lambda state, messages, sender_id, recipient_id: update_var_mp(state, messages, sender_id, receipient_id),
+        "update_var": print_hi,
         "update_fac": print_bye
     }
 }
