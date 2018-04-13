@@ -27,16 +27,24 @@ ALGORITHM_TO_UPDATE_FUNCTIONS = \
 }
 
 
-'''
 def page_rank_update_var(state, messages, sender_id, recipient_id):
-    pass
+    if state==0:
+        return 0
+    else:
+        if sender_id[1:] != recipient_id[1:]:
+            return 0
+        else:
+            return decrypt(messages["f"+sender_id[1:]]) # Need to be change _> careful about decrypt
 
 def page_rank_update_fac(state, messages, sender_id, recipient_id):
-    pass
+    if sender_id[1:] != recipient_id[1:]:
+        return 0
+    else:
+        return sum(list(messages.values())) - messages["v"+sender_id[1:]]  # Need to be change _> careful about decrypt
 
 def page_rank_fake_update_var(state, messages, sender_id, recipient_id):
     pass
 
 def page_rank_fake_update_fac(state, messages, sender_id, recipient_id):
     pass
-'''
+
