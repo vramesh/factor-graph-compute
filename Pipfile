@@ -11,6 +11,7 @@ numpy = "*"
 pylint = "*"
 mock = "*"
 "autopep8" = "*"
+redis = "*"
 
 
 [dev-packages]
