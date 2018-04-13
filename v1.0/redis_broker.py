@@ -1,11 +1,15 @@
 import redis
 import time
 from multiprocessing import Process, Manager, Array
+import pdb
+from threading import Thread
+
 
 class RedisBroker:
     def __init__(self):
         # self.redis_main = redis.StrictRedis(host='localhost',port=6379, db=0, decode_responses=True)
         self.redis_main = redis.Redis()
+        self.redis_pubsub_object = self.redis_main.pubsub(ignore_subscribe_messages=True)
         self.publishers = set()
         self.channels = list()
         self.subscribers = dict()
@@ -18,7 +22,7 @@ class RedisBroker:
     def add_subscriber(self,subscriber_id, callback_function):
         if subscriber_id in self.subscribers:
             return "Need unique subscriber id"
-        new_subscriber = self.redis_main.pubsub(ignore_subscribe_messages=True)
+        new_subscriber = self.redis_pubsub_object
         self.subscribers[subscriber_id] = {"redis_pubsub": new_subscriber,
                                            "callback_function": callback_function}
 
@@ -27,9 +31,14 @@ class RedisBroker:
 
     def add_subscription(self,subscriber_id, channel_id):
         callback_function = self.subscribers[subscriber_id]["callback_function"]
+        r = redis.Redis()
         self.subscribers[subscriber_id]["redis_pubsub"].subscribe(**{channel_id: callback_function})
 
+
+
     def publish(self, channel_id, message):
+        print(channel_id)
+        print(channel_id in self.redis_pubsub_object.channels)
         self.redis_main.publish(channel_id, message)
 
     def start(self):
@@ -40,12 +49,14 @@ class RedisBroker:
                     print("Got message! in " + subscriber_id + str(message))
                 # else:
                 #     print("waiting")
-                time.sleep(0.01)
+                #time.sleep(0.1)
 
         for subscriber_id in self.subscribers:
-            process = Process(target=start_subscriber,
+            process = Thread(target=start_subscriber,
                     args=(subscriber_id,))
-            process.daemon = True
+            #process = Process(target=start_subscriber,
+            #        args=(subscriber_id,))
+            #process.daemon = True
             process.start()
 
 def test_pubsub_redis():

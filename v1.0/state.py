@@ -52,7 +52,7 @@ class RedisNodeStateStore:
     def create_node_state(self, node_id, initial_messages, node_type, node_data):
         #id -> {"messages": , "type", "data"}
         data_dict = {"messages": initial_messages, "node_type": node_type,
-            "node_data": node_data, "stop_countdown": 5}
+            "node_data": node_data, "stop_countdown": 14}
         self.redis.hmset(node_id, data_dict)
         return True
 
@@ -75,27 +75,6 @@ class RedisNodeStateStore:
             return_message = ast.literal_eval(str_data)
 
         return return_message
-
-
-
-
-
-
-
-
-#not used
-class DictNodeStateStore:
-    def __init__(self):
-        self.manager = Manager()
-
-        self.node_state_database = self.manager.dict() #node_id to node_state_object
-
-    def update_node(self, incoming_message, node_id):
-        self.node_state_database[node_id] = incoming_message
-        return True
-
-    def fetch_node(self, node_id):
-        return self.node_state_database[node_id]
 
 
 

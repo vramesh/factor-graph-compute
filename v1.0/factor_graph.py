@@ -4,8 +4,9 @@ from redis_broker import RedisBroker
 from state import RedisNodeStateStore
 from multiprocessing import Process, Manager, Array, current_process
 from node_update_functions import ALGORITHM_TO_UPDATE_FUNCTIONS
-from pagerank_converter import convert_adjacency_list_input_file_to_pagerank_factor_graph_and_register_with_pubsub
+from redis import Redis
 import time
+import pdb
 
 
 decrypt = lambda x: float(x.decode("ascii")) if type(x) == bytes else x 
@@ -30,27 +31,22 @@ class FactorGraph:
         currently manually makes nodes but should read input file
         """
 
-        algo_to_use = "None"
+        update_var_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[self.algorithm]["update_var"]
+        wrapper_var_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_var_function, self.pubsub)
+        update_fac_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[self.algorithm]["update_fac"]
+        wrapper_fac_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_fac_function, self.pubsub)
 
-        if self.algorithm == "page_rank_fake": # this assume reading from the file which specifies factor graph structure
-            algo_to_use = "page_rank_fake"
-        elif self.algorithm == "max_product":
-            algo_to_use = "max_product"
-
-        update_var_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[algo_to_use]["update_var"]
-        wrapper_var_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_var_function)
-        update_fac_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[algo_to_use]["update_fac"]
-        wrapper_fac_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_fac_function)
-
-        self = convert_adjacency_list_input_file_to_pagerank_factor_graph_and_register_with_pubsub(self.path_to_input_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
+        self = register_pubsub_from_pagerank_adjacency_list(self.path_to_input_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
     
-    #here has no propagate_message
     def initial_receive(self):
         for node in self.variable_nodes:
             node.receive_messages_from_neighbors()
 
+
 #manual populate nodes function
-def convert_adjacency_list_input_file_to_pagerank_factor_graph_and_register_with_pubsub(path_to_input_file, pubsub, wrapper_var_function, wrapper_fac_function, factor_graph):
+
+
+def register_pubsub_from_pagerank_adjacency_list(path_to_input_file, pubsub, wrapper_var_function, wrapper_fac_function, factor_graph):
     (adjacency_dict_var,adjacency_dict_fac) = read_file_factor_graph(path_to_input_file) #{1:[2,3]}
     num_node = len(adjacency_dict_var)
 
@@ -109,21 +105,25 @@ class RedisCallbackClass:
     def __init__(self):
         pass
 
-    def message_pass_wrapper_for_redis(incoming_message, input_function):
+    def message_pass_wrapper_for_redis(incoming_message, input_function, pubsub):
+        print("inside message pass")
+        print("realllly inside")
         #is the callback functions for redis to run on pubsub
         #message format from redis: {'pattern': None, 'type': 'subscribe', 'channel': 'my-second-channel', 'data': 1L}
         
         node_id = incoming_message["channel"].decode("ascii").split("_")[1]
-        updated_node_cache = RedisCallbackClass.update_node_cache(incoming_message, node_id) # I'm not sure why making new function for this
+        updated_node_cache = RedisCallbackClass.update_node_cache(incoming_message, node_id)
         print(str(node_id) + " cache: "  + str(updated_node_cache))
 
         stop_countdown = NodeStateStore("redis").fetch_node(node_id,"stop_countdown")
 
+        
+
         if stop_countdown > 0:
-            for to_node_id in list(updated_node_cache.keys()):
+            for to_node_id in updated_node_cache:
                 send_to_channel_name = node_id + "_" + to_node_id
                 new_outgoing_message = RedisCallbackClass.compute_outgoing_message(input_function,updated_node_cache,node_id,to_node_id)
-                RedisCallbackClass.propagate_message(send_to_channel_name, new_outgoing_message)
+                RedisCallbackClass.propagate_message(send_to_channel_name, str(new_outgoing_message).encode('ascii'), pubsub)
                 NodeStateStore("redis").countdown_by_one(node_id)
         else:
             print("terminated")
@@ -137,10 +137,8 @@ class RedisCallbackClass:
         new_outgoing_message = input_function(node_data, updated_node_cache,from_node_id,to_node_id)
         return new_outgoing_message
 
-    def propagate_message(channel_name, new_outgoing_message):
-        #no acccess to pubsub so directly call redisbroker()
-        redis = RedisBroker()
-        redis.publish(channel_name,new_outgoing_message)
+    def propagate_message(channel_name, new_outgoing_message, pubsub):
+        pubsub.broker.publish(channel_name.encode('ascii'),new_outgoing_message)
 
 
 
@@ -178,17 +176,11 @@ class Node:
     def get_sender_list(self):
         return self.initial_node_message_cache.keys()
 
-    #nodes publish to self
-    #initial
     def receive_messages_from_neighbors(self):
-        print("inside receive messages from neighrs init")
-        #force all senders to publish
-        print(self.initial_node_message_cache)
-
+        time.sleep(0.1)
         for sender in self.initial_node_message_cache:
-            channel_id = sender + "_" + self.node_id
-            print(channel_id)
-            self.pubsub.publish(channel_id, self.initial_node_message_cache[sender])
+            channel_id = (sender + "_" + self.node_id).encode('ascii')
+            self.pubsub.broker.publish(channel_id, str(self.initial_node_message_cache[sender]))
 
         #for the sake of initializing pubsub running
 
@@ -196,7 +188,7 @@ class Node:
 
 
 
-def help():
+def toy_problem():
     config = {
         "algorithm": "page_rank_fake",
         "pubsub_choice": "redis",
@@ -209,5 +201,9 @@ def help():
     service.run(try_fg)
 
 
+if __name__ == "__main__":
+    r = Redis()
+    r.flushall()
+    toy_problem()
 
 
