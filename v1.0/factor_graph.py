@@ -8,6 +8,7 @@ from reader import FactorGraphReader
 from node import Node
 from edge import Edge
 import time
+import pdb
 
 
 class FactorGraph:

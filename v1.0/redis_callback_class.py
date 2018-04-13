@@ -10,7 +10,6 @@ class RedisCallbackClass:
         
         node_id = incoming_message["channel"].decode("ascii").split("_")[1] #this is only redis dependent line
         updated_node_cache = RedisCallbackClass.update_node_cache(incoming_message, node_id)
-        print(str(node_id) + " cache: "  + str(updated_node_cache))
 
         stop_countdown = NodeStateStore("redis").fetch_node(node_id,"stop_countdown")
         
