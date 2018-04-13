@@ -3,6 +3,7 @@ import time
 from multiprocessing import Process, Manager, Array
 import pdb
 from threading import Thread
+import pickle
 
 
 class RedisBroker:
@@ -38,24 +39,25 @@ class RedisBroker:
         return str(x.decode("ascii")) if type(x) == bytes else x 
 
     def publish(self, channel_id, message):
-        self.redis_main.publish(self.decrypt(channel_id), str(message).encode('ascii'))
+        pickle_message = pickle.dumps(message)
+        self.redis_main.publish(self.decrypt(channel_id), pickle_message)
 
     def start(self):
         def start_subscriber(subscriber_id):
             while True:
                 message = self.subscribers[subscriber_id]["redis_pubsub"].get_message()
-                if message:
-                    print("Got message! in " + subscriber_id + str(message))
+                if message is not None:
+                    print("Got message! in " + subscriber_id + " " + str(message))
                 # else:
                 #     print("waiting")
-                #time.sleep(0.1)
+                time.sleep(0.001)
 
         for subscriber_id in self.subscribers:
             process = Thread(target=start_subscriber,
-                    args=(subscriber_id,))
-            #process = Process(target=start_subscriber,
-            #        args=(subscriber_id,))
-            #process.daemon = True
+                   args=(subscriber_id,))
+            # process = Process(target=start_subscriber,
+            #         args=(subscriber_id,))
+            process.daemon = True
             process.start()
 
 
