@@ -1,10 +1,10 @@
 decrypt = lambda x: float(x.decode("ascii")) if type(x) == bytes else x 
 
 def print_bye(a=None, b=None, c=None, d=None):
-    print("bye")
+    return "bye"
 
 def print_hi(a=None, b=None, c=None, d=None):
-    print("hi")
+    return "hi"
 
 ALGORITHM_TO_UPDATE_FUNCTIONS = \
 {
@@ -20,6 +20,11 @@ ALGORITHM_TO_UPDATE_FUNCTIONS = \
 
     "max_product": {
         "update_var": print_hi,
+        "update_fac": print_bye
+    },
+
+    "test": {
+        "update_var": print_hi,#lambda state, messages, sender_id, recipient_id: update_var_mp(state, messages, sender_id, receipient_id),
         "update_fac": print_bye
     }
 }
