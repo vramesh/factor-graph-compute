@@ -7,6 +7,7 @@ from redis_callback_class import *
 from reader import FactorGraphReader
 from node import Node
 from edge import Edge
+from input_to_fg_converter import convert_to_page_rank_factor_graph_file
 import time
 
 
@@ -19,6 +20,7 @@ class FactorGraph:
         self.config = config
         self.algorithm = config["algorithm"]
         self.path_to_input_file = path_to_input_file
+        self.path_to_factor_graph_file = "examples/temporary_factor_graph.txt"
         self.initialize_nodes_and_edges() 
         self.pubsub.start()
         time.sleep(0.1)
@@ -34,11 +36,22 @@ class FactorGraph:
         update_fac_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[self.algorithm]["update_fac"]
         wrapper_fac_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_fac_function, self.pubsub)
 
-        self = FactorGraphReader.register_pubsub_from_pagerank_adjacency_list(self.path_to_input_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
-    
+        if (self.algorithm == "page_rank"):
+            convert_to_page_rank_factor_graph_file(self.path_to_input_file,self.path_to_factor_graph_file)
+            self = FactorGraphReader.register_pubsub_from_pagerank_adjacency_list(self.path_to_factor_graph_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
+        else:
+            print("Haven't implemented this algorithm yet")
+
+
     def run(self):
         for node in self.variable_nodes:
             node.receive_messages_from_neighbors()
+
+    def get_result(self):
+        results = list()
+        for node in self.variable_nodes:
+            results.append(node.get_current_cached())
+        return results
 
 
 
@@ -47,13 +60,15 @@ if __name__ == "__main__":
     r = Redis()
     r.flushall()
     config = {
-        "algorithm": "page_rank_fake",
+        "algorithm": "page_rank",
         "pubsub_choice": "redis",
         "synchronous": "asynchronous"
     }
 
-    path_to_input_file = "examples/pagerank_factor_graph_example_adjadjacency_list.txt"
+    path_to_input_file = "examples/pagerank_graph_adjaceny_list_example.txt"
     try_fg = FactorGraph(path_to_input_file, config)
     try_fg.run()
+    time.sleep(20)
+    print(try_fg.get_result())
 
 
