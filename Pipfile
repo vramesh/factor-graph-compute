@@ -11,7 +11,9 @@ numpy = "*"
 pylint = "*"
 mock = "*"
 "autopep8" = "*"
+<<<<<<< HEAD
 redis = "*"
+sklearn = "*"
 
 
 [dev-packages]
