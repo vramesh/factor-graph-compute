@@ -1,3 +1,4 @@
+from max_product import max_product_update_var, max_product_update_fac
 decrypt = lambda x: float(x.decode("ascii")) if type(x) == bytes else x 
 
 def print_bye(a=None, b=None, c=None, d=None):
@@ -45,8 +46,8 @@ ALGORITHM_TO_UPDATE_FUNCTIONS = \
     },
 
     "max_product": {
-        "update_var": print_hi,
-        "update_fac": print_bye
+        "update_var": max_product_update_var,
+        "update_fac": max_product_update_fac
     },
 
     "test": {

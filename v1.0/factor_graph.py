@@ -58,12 +58,19 @@ class FactorGraph:
             results.append(node.get_current_cached())
         return results
 
+    def print_solution(self):
+        for node in self.variable_nodes:
+            print(node.node_id, ": ", node.get_final_state(self.algorithm))
+
+
+
+
 if __name__ == "__main__":
     r = Redis()
     r.flushall()
 
     config = {
-        "algorithm": "page_rank",
+        "algorithm": "max_product",
         "pubsub_choice": "redis",
         "synchronous": "asynchronous"
     }

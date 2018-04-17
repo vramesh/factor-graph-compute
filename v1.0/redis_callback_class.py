@@ -13,14 +13,15 @@ class RedisCallbackClass:
         updated_node_cache = RedisCallbackClass.update_node_cache(incoming_message, node_id)
         stop_countdown = NodeStateStore("redis").fetch_node(node_id,"stop_countdown")
         
-
         if stop_countdown > 0:
+            # this is slightly inefficient implementation: should move for loop
+            # to within the update_var / update_fac methods
             for to_node_id in updated_node_cache:
                 send_to_channel_name = node_id + "_" + to_node_id
                 new_outgoing_message = RedisCallbackClass.compute_outgoing_message(input_function,updated_node_cache,node_id,to_node_id)
                 RedisCallbackClass.propagate_message(send_to_channel_name, new_outgoing_message, pubsub)
                 NodeStateStore("redis").countdown_by_one(node_id)
-        else:
+        elif stop_countdown == 0:
             print("terminated")
 
     def update_node_cache(incoming_message, node_id):

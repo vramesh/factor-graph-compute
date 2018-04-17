@@ -1,4 +1,5 @@
 from state import NodeStateStore
+import numpy as np
 import time
 
 class Node:
@@ -30,3 +31,10 @@ class Node:
 
     def get_current_cached(self):
         return NodeStateStore("redis").fetch_node(self.node_id,"messages")
+    def get_final_state(self, algorithm):
+        node_cache = self.state_store.fetch_node(self.node_id, 'messages')
+        if algorithm == 'max_product':
+            return np.prod(np.array([message for _, message in
+                node_cache.items()]))
+        else:
+            return node_cache
