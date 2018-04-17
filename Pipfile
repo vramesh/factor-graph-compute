@@ -14,6 +14,8 @@ mock = "*"
 <<<<<<< HEAD
 redis = "*"
 sklearn = "*"
+scipy = "*"
+attrdict = "*"
 
 
 [dev-packages]
