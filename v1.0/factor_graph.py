@@ -42,19 +42,26 @@ class FactorGraph:
             node.receive_messages_from_neighbors()
 
 
+    def print_solution(self):
+        for node in self.variable_nodes:
+            print(node.node_id, ": ", node.get_final_state(self.algorithm))
+
+
 
 
 if __name__ == "__main__":
     r = Redis()
     r.flushall()
     config = {
-        "algorithm": "page_rank_fake",
+        "algorithm": "max_product",
         "pubsub_choice": "redis",
         "synchronous": "asynchronous"
     }
 
-    path_to_input_file = "examples/pagerank_factor_graph_example_adjadjacency_list.txt"
+    path_to_input_file = "examples/sudoku_1_by_2_input.txt" 
     try_fg = FactorGraph(path_to_input_file, config)
     try_fg.run()
+    time.sleep(100)
+    try_fg.print_solution()
 
 

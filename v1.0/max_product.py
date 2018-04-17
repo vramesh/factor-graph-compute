@@ -50,13 +50,9 @@ class MaxProductVariableNode(MaxProductNode):
         return edges_with_marginals 
 
     def __node_state_from_edges(self, edges):
-#        if any([edge.decimation_status for edge in edges]) == 1:
-#            message_product = np.array([0,1])
-#        else:
         variable_cost_mean = edges[0].variable_cost
         variable_cost = variable_cost_mean#np.sign(variable_cost_mean)*np.random.exponential(np.abs(variable_cost_mean))
         message_product = np.array([1, np.exp(-1*variable_cost)])*self.__compute_message_product(edges)
-#            message_product = self.__compute_message_product(edges)
         return self.__normalize_message(message_product)
 
     def __edges_from_node_state(self, node_state, edges):
@@ -75,15 +71,6 @@ class MaxProductVariableNode(MaxProductNode):
     def __compute_message_product(self, edges):
         edge_array = np.array([edge.message for edge in edges])
         message_product = np.prod(edge_array, axis=0) 
-
-        '''
-        if message_product[0] == 0 and message_product[1] == 0:
-            print "noise case"
-            noise = 0.003
-#            message_product = np.array([1-noise, 0+noise])
-            edge_array_with_noise  = edge_array + noise
-            message_product = np.prod(edge_array_with_noise, axis=0) 
-        '''
         return message_product
 
     def __compute_new_neighbor_message(self, message_product, edge):
@@ -132,13 +119,6 @@ class MaxProductFactorNode():
         edges = self.incoming_messages
         node_state = self.__node_state_from_edges(edges)
         new_edges = self.__edges_from_node_state(node_state, edges)
-
-        '''
-        if all([edge.message[0] == edge.message[1] for edge in new_edges]):
-            perturbed_edges = [self.__perturb_edge_message(edge) for edge in new_edges] 
-            perturbed_node_state = self.__node_state_from_edges(perturbed_edges)
-            new_edges = self.__edges_from_node_state(perturbed_node_state, perturbed_edges)
-        '''
         return new_edges
 
     def __perturb_edge_message(self, edge):
@@ -152,7 +132,6 @@ class MaxProductFactorNode():
 
         marginal_values_vector = np.array([np.argmax(edge.message) for edge in
             sorted(edges, key=lambda edge: edge.node_id)])
-#            sorted(edges, key=lambda edge: edge.variable_node.id)])
 
         factor_function_value = np.inner(factor_coeffs,
                 marginal_values_vector)
@@ -175,15 +154,10 @@ class MaxProductFactorNode():
             lower_constraint_score = 1
 
         constraint_score = 1 - upper_constraint_score*lower_constraint_score
-
-#        if constraint_score == 1:
-#            pdb.set_trace()
-
         return constraint_score
 
     def __node_state_from_edges(self, edges):
         neighbor_messages = sorted(edges, key=lambda edge: edge.node_id)
-#        neighbor_messages = sorted(edges, key=lambda edge: edge.variable_node.id)
 
         samples = self.__generate_sample_vectors(neighbor_messages)
 
@@ -192,8 +166,6 @@ class MaxProductFactorNode():
         factor_function = lambda values: 1 if (factor_bounds[0] <=
                 np.inner(factor_coeffs, values) <= (factor_bounds[1] or np.inf)) else 0
 
-#        to_decimate = process_decimation_requests(neighbors, factor_function)
-        
         return AttrDict({'samples': samples, 'factor_function':
             factor_function})
             
@@ -211,21 +183,6 @@ class MaxProductFactorNode():
     ## Helper Methods
 
     def __generate_sample_vectors(self, sorted_edges):
-        '''
-        if sorted_edges[0].message[0] != sorted_edges[0].message[1]:
-            global stop_condition
-            stop_condition = True
-            pdb.set_trace()
-        else:
-            stop_condition = False 
-        global stop_condition
-        to_print = [edge for edge in sorted_edges if edge.id in [912]]
-        if to_print:
-            stop_condition = True
-            print "edge 912: " + str(to_print)
-        else:
-            stop_condition = False
-        '''
         num_samples = 1000
         sample_vectors = np.array([np.random.choice([0,1], num_samples,
             p=edge.message.tolist()) for edge in sorted_edges]).T
@@ -241,7 +198,7 @@ class MaxProductFactorNode():
 
 
         message_update = self.__compute_new_message_from_sample_vectors(index, samples,
-                factor_function)# if decimation_status == 0 else current_message
+                factor_function)
         
         decimation_update = decimation_status
         edge.message = message_update
@@ -251,43 +208,11 @@ class MaxProductFactorNode():
             factor_function):
 
         noise = 0#.003
-
-        '''
-        sample_vectors_for_index_is_0 = sample_vectors[np.where(sample_vectors[..., index] == 0)]
-        sample_vectors_for_index_is_1 = sample_vectors[np.where(sample_vectors[..., index] == 1)]
-
-
-        if sample_vectors_for_index_is_0.shape[0] == 0:
-            max_value_for_0 = 0.003
-        else:
-            unique_sample_vectors_for_index_is_0, frequency_counts_for_index_is_0 = np.unique(sample_vectors_for_index_is_0, axis=0, return_counts=True)
-            max_value_for_0 = np.max(np.apply_along_axis(factor_function, 1, unique_sample_vectors_for_index_is_0)*frequency_counts_for_index_is_0)
-
-        if sample_vectors_for_index_is_1.shape[0] == 0:
-            max_value_for_1 = 0.003 
-        else:
-            unique_sample_vectors_for_index_is_1, frequency_counts_for_index_is_1 = np.unique(sample_vectors_for_index_is_1, axis=0, return_counts=True)
-            max_value_for_1 = np.max(np.apply_along_axis(factor_function, 1, unique_sample_vectors_for_index_is_1)*frequency_counts_for_index_is_1)
-
-
-#        pdb.set_trace()
-#
-#        if stop_condition:
-#            pdb.set_trace()
-
-        '''
         sample_vectors_without_index = np.copy(sample_vectors)
         sample_vectors_without_index[..., index] = np.zeros(sample_vectors.shape[0])
 
         unique_sample_vectors, frequency_counts = np.unique(sample_vectors_without_index, axis=0, return_counts=True)
 
-        '''
-        if stop_condition:
-            print "unique sample vectors " + str(unique_sample_vectors)
-            print "frequency counts " + str(frequency_counts)
-        '''
-
-        
         max_value_for_0 = np.max(np.apply_along_axis(factor_function, 1, unique_sample_vectors)*frequency_counts)
 
         unique_sample_vectors[..., index] = np.ones(unique_sample_vectors.shape[0])
@@ -309,15 +234,4 @@ class MaxProductFactorNode():
     def __normalize(self, message):
         noise = 1#np.array([0,1])*np.exp(np.random.normal())
         return message/float(message.sum()) if message.sum() > 0 else np.array([0.5, 0.5])*noise
-#        return message/message.sum() if message.sum() > 0 else np.array([0, 1])
-#        return message/float(message.sum()) if message.sum() > 0 else np.array([1, 0])
-        '''
-        if message.sum() > 0:
-            return message/float(message.sum())
-        else:
-            message = np.array([1,0])
-#            index = np.random.choice([0,1])
-#            message[index] = 1
-            return message
-        '''
 

@@ -1,4 +1,5 @@
 from state import NodeStateStore
+import numpy as np
 import time
 
 class Node:
@@ -26,4 +27,10 @@ class Node:
             channel_id = (sender + "_" + self.node_id).encode('ascii') #encode
             self.pubsub.broker.publish(channel_id, str(self.initial_node_message_cache[sender]))
 
-        #for the sake of initializing pubsub running
+    def get_final_state(self, algorithm):
+        node_cache = self.state_store.fetch_node(self.node_id, 'messages')
+        if algorithm == 'max_product':
+            return np.prod(np.array([message for _, message in
+                node_cache.items()]))
+        else:
+            return node_cache
