@@ -59,4 +59,3 @@ ALGORITHM_TO_UPDATE_FUNCTIONS = \
         "update_fac": lambda state, messages, sender_id, recipient_id: messages[recipient_id]+[2]
     }
 }
-

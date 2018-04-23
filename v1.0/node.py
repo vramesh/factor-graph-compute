@@ -21,7 +21,6 @@ class Node:
         return self.initial_node_message_cache.keys()
 
     def receive_messages_from_neighbors(self):
-        # time.sleep(0.1)
         for sender in self.initial_node_message_cache:
             channel_id = (sender + "_" + self.node_id).encode('ascii') #encode
             self.pubsub.broker.publish(channel_id, self.initial_node_message_cache[sender])
