@@ -68,7 +68,7 @@ if __name__ == "__main__":
         "synchronous": "asynchronous"
     }
 
-    path_to_input_file = "examples/pagerank_graph_adjaceny_list_example.txt"
+    path_to_input_file = "examples/temporary_factor_graph.txt"
 
     # config = {
     #     "algorithm": "try_pickle",
