@@ -3,6 +3,7 @@ import time
 from multiprocessing import Process, Manager, Array
 import pdb
 from threading import Thread
+import pickle
 
 
 class RedisBroker:
@@ -38,7 +39,8 @@ class RedisBroker:
         return str(x.decode("ascii")) if type(x) == bytes else x 
 
     def publish(self, channel_id, message):
-        self.redis_main.publish(self.decrypt(channel_id), str(message).encode('ascii'))
+        pickle_message = pickle.dumps(message)
+        self.redis_main.publish(self.decrypt(channel_id), pickle_message)
 
     def start(self):
         def start_subscriber(subscriber_id):

@@ -27,9 +27,9 @@ class RedisNodeStateStore:
     def update_node_messages(self, message_to_be_cached, node_id):
         node_id = str(node_id)
         previous_message = self.get_data(node_id, "messages")
-        channel_name = self.decryptor(message_to_be_cached["channel"],is_string=True)
+        channel_name = message_to_be_cached["channel"]
         from_node = channel_name.split("_")[0]
-        new_message = self.decryptor(message_to_be_cached["data"])  # careful if it is binary or str
+        new_message = message_to_be_cached["data"]  # careful if it is binary or str
         previous_message[from_node] = new_message
         to_be_set_message = previous_message
         self.set_data(node_id,to_be_set_message,"messages")
@@ -42,11 +42,7 @@ class RedisNodeStateStore:
             stop_countdown=10):
         #id -> {"messages": , "type", "data"}
         data_dict = {"messages": initial_messages, "node_type": node_type,
-<<<<<<< HEAD
-            "node_data": node_data, "stop_countdown": 100} #14
-=======
             "node_data": node_data, "stop_countdown": stop_countdown}
->>>>>>> e60ca8c5c4a77bb40da8ee76c3c7ae35f66276d0
         self.redis.hmset(node_id, data_dict)
         return True
 

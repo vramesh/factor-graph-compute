@@ -1,4 +1,5 @@
 from state import NodeStateStore
+import pickle
 
 class RedisCallbackClass:
     def __init__(self):
@@ -10,7 +11,6 @@ class RedisCallbackClass:
         
         node_id = incoming_message["channel"].decode("ascii").split("_")[1] #this is only redis dependent line
         updated_node_cache = RedisCallbackClass.update_node_cache(incoming_message, node_id)
-
         stop_countdown = NodeStateStore("redis").fetch_node(node_id,"stop_countdown")
         
 
@@ -24,7 +24,12 @@ class RedisCallbackClass:
             print("terminated")
 
     def update_node_cache(incoming_message, node_id):
-        updated_node_cache = NodeStateStore("redis").update_node(incoming_message, node_id)
+        modified_incoming_message = dict()
+        modified_incoming_message["channel"] = incoming_message["channel"].decode('ascii')
+        modified_incoming_message["data"] = pickle.loads(incoming_message["data"])
+
+        updated_node_cache = NodeStateStore("redis").update_node(modified_incoming_message, node_id)
+        print(updated_node_cache)
         return updated_node_cache
 
     def compute_outgoing_message(input_function,updated_node_cache,from_node_id,to_node_id):

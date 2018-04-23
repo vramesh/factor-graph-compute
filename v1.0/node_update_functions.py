@@ -52,6 +52,11 @@ ALGORITHM_TO_UPDATE_FUNCTIONS = \
     "test": {
         "update_var": print_hi,#lambda state, messages, sender_id, recipient_id: update_var_mp(state, messages, sender_id, receipient_id),
         "update_fac": print_bye
+    },
+
+    "try_pickle": {
+        "update_var": lambda state, messages, sender_id, recipient_id: messages[recipient_id]+[1],
+        "update_fac": lambda state, messages, sender_id, recipient_id: messages[recipient_id]+[2]
     }
 }
 
