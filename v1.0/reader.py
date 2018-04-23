@@ -1,5 +1,6 @@
 from node import Node
 from edge import Edge
+import ast
 
 class FactorGraphReader:
     def register_pubsub_from_pagerank_adjacency_list(path_to_input_file, pubsub, wrapper_var_function, wrapper_fac_function, factor_graph):
@@ -40,7 +41,7 @@ class FactorGraphReader:
             for line in all_lines:
                 [x,y,initial_incoming_message] = line.split()
                 initial_incoming_message = float(initial_incoming_message)
-
+                
                 if y[0]=="v":
                     add_to_adjacency_dict = adjacency_dict_var
                 elif y[0]=="f":

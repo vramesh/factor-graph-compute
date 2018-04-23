@@ -40,6 +40,10 @@ class FactorGraph:
         if (self.algorithm == "page_rank"):
             convert_to_page_rank_factor_graph_file(self.path_to_input_file,self.path_to_factor_graph_file)
             self = FactorGraphReader.register_pubsub_from_pagerank_adjacency_list(self.path_to_factor_graph_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
+        # if (self.algorithm == "try_pickle"):
+        #     self.path_to_factor_graph_file = "examples/try_pickle_fg_input.txt"
+        #     self = FactorGraphReader.register_pubsub_from_pagerank_adjacency_list(self.path_to_factor_graph_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
+        
         else:
             print("Haven't implemented this algorithm yet")
 
