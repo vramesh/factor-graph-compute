@@ -40,7 +40,8 @@ class FactorGraphReader:
             all_lines = f.readlines()
             for line in all_lines:
                 [x,y,initial_incoming_message] = line.split()
-                initial_incoming_message = float(initial_incoming_message)
+                # initial_incoming_message = float(initial_incoming_message)
+                initial_incoming_message = ast.literal_eval(initial_incoming_message)
                 
                 if y[0]=="v":
                     add_to_adjacency_dict = adjacency_dict_var
