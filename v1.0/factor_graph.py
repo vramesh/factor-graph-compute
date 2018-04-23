@@ -9,6 +9,7 @@ from node import Node
 from edge import Edge
 from input_to_fg_converter import convert_to_page_rank_factor_graph_file
 import time
+import pdb
 
 
 class FactorGraph:

@@ -38,10 +38,15 @@ class RedisNodeStateStore:
     def countdown_by_one(self, node_id):
         self.redis.hincrby(node_id, 'stop_countdown', -1)
 
-    def create_node_state(self, node_id, initial_messages, node_type, node_data):
+    def create_node_state(self, node_id, initial_messages, node_type, node_data,
+            stop_countdown=10):
         #id -> {"messages": , "type", "data"}
         data_dict = {"messages": initial_messages, "node_type": node_type,
+<<<<<<< HEAD
             "node_data": node_data, "stop_countdown": 100} #14
+=======
+            "node_data": node_data, "stop_countdown": stop_countdown}
+>>>>>>> e60ca8c5c4a77bb40da8ee76c3c7ae35f66276d0
         self.redis.hmset(node_id, data_dict)
         return True
 
