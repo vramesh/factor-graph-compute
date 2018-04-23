@@ -1,6 +1,7 @@
 from multiprocessing import Manager
 from redis import StrictRedis, Redis
 import ast
+import pickle
 
 class NodeStateStore: #node state manager
     def __init__(self, state_store_spec):
@@ -36,22 +37,30 @@ class RedisNodeStateStore:
         return to_be_set_message
 
     def countdown_by_one(self, node_id):
-        self.redis.hincrby(node_id, 'stop_countdown', -1)
+        # self.redis.hincrby(node_id, 'stop_countdown', -1)
+        current_countdown = self.get_data(node_id,'stop_countdown')
+        self.set_data(node_id,current_countdown-1,'stop_countdown')
 
     def create_node_state(self, node_id, initial_messages, node_type, node_data,
             stop_countdown=10):
         #id -> {"messages": , "type", "data"}
-        data_dict = {"messages": initial_messages, "node_type": node_type,
-            "node_data": node_data, "stop_countdown": stop_countdown}
+        pickle_initial_messages = pickle.dumps(initial_messages)
+        pickle_node_type = pickle.dumps(node_type)
+        pickle_node_data = pickle.dumps(node_data)
+        pickle_stop_countdown = pickle.dumps(stop_countdown)
+        data_dict = {"messages": pickle_initial_messages, "node_type": pickle_node_type,
+            "node_data": pickle_node_data, "stop_countdown": pickle_stop_countdown}
         self.redis.hmset(node_id, data_dict)
         return True
 
     def get_data(self,node_id,field,is_string=False): # pickle back to str or dict 
         message = self.redis.hget(node_id, field)
-        return self.decryptor(message)
+        unpickle_message = pickle.loads(message)
+        return unpickle_message
 
     def set_data(self, node_id, to_be_set_message, field): # if we want to pickle, pickle here
-        self.redis.hset(node_id, field, to_be_set_message)
+        pickle_message = pickle.dumps(to_be_set_message)
+        self.redis.hset(node_id, field, pickle_message)
         return True
 
     def decryptor(self,data,is_string=False):
