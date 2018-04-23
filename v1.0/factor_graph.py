@@ -57,6 +57,7 @@ class FactorGraph:
 if __name__ == "__main__":
     r = Redis()
     r.flushall()
+
     config = {
         "algorithm": "page_rank",
         "pubsub_choice": "redis",
@@ -64,6 +65,14 @@ if __name__ == "__main__":
     }
 
     path_to_input_file = "examples/pagerank_graph_adjaceny_list_example.txt"
+
+    # config = {
+    #     "algorithm": "try_pickle",
+    #     "pubsub_choice": "redis",
+    #     "synchronous": "asynchronous"
+    # }
+    # path_to_input_file = "examples/try_pickle_fg_input.txt"
+
     try_fg = FactorGraph(path_to_input_file, config)
     try_fg.run()
     time.sleep(20)
