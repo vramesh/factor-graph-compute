@@ -29,7 +29,7 @@ class SumProductNode():
     def __init__(self, node_id, incoming_messages):
         self.node_id = node_id 
         self.incoming_messages = [AttrDict({
-            'message': np.array([1-neighbor_message, neighbor_message]), 
+            'message': np.array(neighbor_message), 
             'variable_cost': 1,
             'node_id': neighbor_id}) 
             for neighbor_id, neighbor_message in
@@ -43,7 +43,7 @@ class SumProductVariableNode(SumProductNode):
     def update_edge_message(self, neighbor_to_update):
         updated_edges = self.update_edges() 
         return [edge.message for edge in updated_edges if edge.node_id ==
-                neighbor_to_update][0][1]
+                neighbor_to_update][0]
 
     def update_edges(self):
         edges = self.incoming_messages
@@ -106,7 +106,7 @@ class SumProductFactorNode():
         else:
         '''
         self.incoming_messages = [AttrDict({
-            'message': np.array([1-neighbor_message, neighbor_message]), 
+            'message': np.array(neighbor_message), 
             'variable_cost': 1,
             'variable_node_id': neighbor_id,
             'factor_node_id': factor_id,
@@ -121,7 +121,7 @@ class SumProductFactorNode():
     def update_edge_message(self, neighbor_to_update):
         updated_edges = self.update_edges() 
         return [edge.message for edge in updated_edges if edge.variable_node_id ==
-                neighbor_to_update][0][1]
+                neighbor_to_update][0]
 
     def update_edges(self):
         edges = self.incoming_messages
@@ -215,7 +215,7 @@ class SumProductFactorNode():
 
         new_message = \
         sum(factor_function_samples)/float(len(sample_vectors))
-#        self.__normalize(sum(factor_function_samples)/float(len(sample_vectors)))
+        self.__normalize(sum(factor_function_samples)/float(len(sample_vectors)))
         return new_message
 
     def __apply_factor_function(self, index, sample_vector, factor_function):
