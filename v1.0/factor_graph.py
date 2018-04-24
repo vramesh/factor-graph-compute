@@ -52,7 +52,8 @@ class FactorGraph:
 
 
     def run(self):
-        for node in self.variable_nodes:
+#        for node in self.variable_nodes:
+        for node in self.factor_nodes:
             node.receive_messages_from_neighbors()
 
     def get_result(self):
@@ -62,6 +63,7 @@ class FactorGraph:
         return results
 
     def print_solution(self):
+        print("print results")
         for node in self.variable_nodes:
             print(node.node_id, ": ", node.get_final_state(self.algorithm))
 
@@ -82,7 +84,7 @@ if __name__ == "__main__":
 
     try_fg = FactorGraph(path_to_input_file, config)
     try_fg.run()
-    time.sleep(20)
-    print(try_fg.get_result())
+    time.sleep(10)
+    try_fg.print_solution()
 
 
