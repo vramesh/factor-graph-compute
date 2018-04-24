@@ -53,11 +53,11 @@ class RedisBroker:
                 #time.sleep(0.1)
 
         for subscriber_id in self.subscribers:
-            process = Thread(target=start_subscriber,
-                    args=(subscriber_id,))
-#            process = Process(target=start_subscriber,
+#            process = Thread(target=start_subscriber,
 #                    args=(subscriber_id,))
-#            process.daemon = True
+            process = Process(target=start_subscriber,
+                    args=(subscriber_id,))
+            process.daemon = True
             process.start()
 
 
