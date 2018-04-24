@@ -1,6 +1,7 @@
 from state import NodeStateStore
 import numpy as np
 import time
+import pdb
 
 class Node:
     def __init__(self,node_id,node_type,node_function,initial_node_message_cache,node_data,pubsub):
@@ -33,8 +34,11 @@ class Node:
         return NodeStateStore("redis").fetch_node(self.node_id,"messages")
     def get_final_state(self, algorithm):
         node_cache = self.state_store.fetch_node(self.node_id, 'messages')
-        if algorithm == 'max_product':
-            return np.prod(np.array([message for _, message in
+        if algorithm == 'max_product' or algorithm == 'sum_product':
+            unnormalized_probability_vector = np.prod(np.array([message for _, message in
                 node_cache.items()]))
+            normalized_probability_vector = \
+            unnormalized_probability_vector/unnormalized_probability_vector.sum()
+            return np.argmax(normalized_probability_vector) 
         else:
             return node_cache
