@@ -70,7 +70,7 @@ if __name__ == "__main__":
     r.flushall()
 
     config = {
-        "algorithm": "max_product",
+        "algorithm": "sum_product",
         "pubsub_choice": "redis",
         "synchronous": "asynchronous"
     }
