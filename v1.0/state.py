@@ -42,7 +42,7 @@ class RedisNodeStateStore:
         self.set_data(node_id,current_countdown-1,'stop_countdown')
 
     def create_node_state(self, node_id, initial_messages, node_type, node_data,
-            stop_countdown=10):
+            stop_countdown=500):
         #id -> {"messages": , "type", "data"}
         pickle_initial_messages = pickle.dumps(initial_messages)
         pickle_node_type = pickle.dumps(node_type)
