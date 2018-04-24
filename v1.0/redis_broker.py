@@ -55,9 +55,9 @@ class RedisBroker:
         for subscriber_id in self.subscribers:
             process = Thread(target=start_subscriber,
                     args=(subscriber_id,))
-            #process = Process(target=start_subscriber,
-            #        args=(subscriber_id,))
-            #process.daemon = True
+#            process = Process(target=start_subscriber,
+#                    args=(subscriber_id,))
+#            process.daemon = True
             process.start()
 
 
