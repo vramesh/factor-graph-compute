@@ -1,4 +1,5 @@
 from max_product import max_product_update_var, max_product_update_fac
+from sum_product import sum_product_update_var, sum_product_update_fac
 decrypt = lambda x: float(x.decode("ascii")) if type(x) == bytes else x 
 
 def print_bye(a=None, b=None, c=None, d=None):
@@ -58,5 +59,10 @@ ALGORITHM_TO_UPDATE_FUNCTIONS = \
     "try_pickle": {
         "update_var": lambda state, messages, sender_id, recipient_id: messages[recipient_id]+[1],
         "update_fac": lambda state, messages, sender_id, recipient_id: messages[recipient_id]+[2]
+    },
+
+    "sum_product": {
+        "update_var": sum_product_update_var,
+        "update_fac": sum_product_update_fac
     }
 }
