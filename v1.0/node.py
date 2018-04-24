@@ -32,13 +32,20 @@ class Node:
 
     def get_current_cached(self):
         return NodeStateStore("redis").fetch_node(self.node_id,"messages")
+
     def get_final_state(self, algorithm):
         node_cache = self.state_store.fetch_node(self.node_id, 'messages')
         if algorithm == 'max_product' or algorithm == 'sum_product':
-            unnormalized_probability_vector = np.prod(np.array([message for _, message in
-                node_cache.items()]))
+            print(node_cache)
+            if len(node_cache.items()) > 1:
+                un_normalized_probability_vector = np.prod(np.array([message for _, message in
+                    node_cache.items()]), axis=1)
+            else:
+                un_normalized_probability_vector = np.array([message for _,
+                    message in node_cache.items()])[0]
             normalized_probability_vector = \
-            unnormalized_probability_vector/unnormalized_probability_vector.sum()
-            return np.argmax(normalized_probability_vector) 
+            un_normalized_probability_vector/un_normalized_probability_vector.sum()
+            return normalized_probability_vector
+#            return np.argmax(normalized_probability_vector) 
         else:
             return node_cache
