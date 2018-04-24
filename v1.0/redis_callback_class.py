@@ -1,5 +1,6 @@
 from state import NodeStateStore
 import pickle
+import pdb
 
 class RedisCallbackClass:
     def __init__(self):
@@ -9,18 +10,24 @@ class RedisCallbackClass:
         #is the callback functions for redis to run on pubsub
         #message format from redis: {'pattern': None, 'type': 'subscribe', 'channel': 'my-second-channel', 'data': 1L}
         
+        from_node_id = incoming_message["channel"].decode("ascii").split("_")[0] #this is only redis dependent line
         node_id = incoming_message["channel"].decode("ascii").split("_")[1] #this is only redis dependent line
         updated_node_cache = RedisCallbackClass.update_node_cache(incoming_message, node_id)
         stop_countdown = NodeStateStore("redis").fetch_node(node_id,"stop_countdown")
+
+        debug = False
         
         if stop_countdown > 0:
             # this is slightly inefficient implementation: should move for loop
             # to within the update_var / update_fac methods
             for to_node_id in updated_node_cache:
-                send_to_channel_name = node_id + "_" + to_node_id
-                new_outgoing_message = RedisCallbackClass.compute_outgoing_message(input_function,updated_node_cache,node_id,to_node_id)
-                RedisCallbackClass.propagate_message(send_to_channel_name, new_outgoing_message, pubsub)
-                NodeStateStore("redis").countdown_by_one(node_id)
+                if int(to_node_id[1:]) != int(from_node_id[1:]):
+                    send_to_channel_name = node_id + "_" + to_node_id
+                    new_outgoing_message = \
+                    RedisCallbackClass.compute_outgoing_message(input_function,updated_node_cache,node_id,to_node_id,
+                            from_node_id)
+                    RedisCallbackClass.propagate_message(send_to_channel_name, new_outgoing_message, pubsub)
+                    NodeStateStore("redis").countdown_by_one(node_id)
         elif stop_countdown == 0:
             print("terminated")
 
@@ -30,12 +37,14 @@ class RedisCallbackClass:
         modified_incoming_message["data"] = pickle.loads(incoming_message["data"])
 
         updated_node_cache = NodeStateStore("redis").update_node(modified_incoming_message, node_id)
-        print(updated_node_cache)
+#        print(updated_node_cache)
         return updated_node_cache
 
-    def compute_outgoing_message(input_function,updated_node_cache,from_node_id,to_node_id):
-        node_data = NodeStateStore("redis").fetch_node(from_node_id,"node_data")
-        new_outgoing_message = input_function(node_data, updated_node_cache,from_node_id,to_node_id)
+    def compute_outgoing_message(input_function,updated_node_cache,current_node_id,to_node_id,
+            from_node_id):
+        node_data = NodeStateStore("redis").fetch_node(current_node_id,"node_data")
+        new_outgoing_message = input_function(node_data,
+                updated_node_cache,current_node_id,to_node_id, from_node_id)
         return new_outgoing_message
 
     def propagate_message(channel_name, new_outgoing_message, pubsub):
