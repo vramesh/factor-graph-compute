@@ -3,7 +3,7 @@ f11 v1 [1,0]
 v1 f12 None
 f12 v1 None
 v2 f12 None
-f12 v1 None
+f12 v2 None
 f22 v2 [0,1]
 Vertices
 v1 [0.75,0.25]

@@ -14,6 +14,7 @@ class RedisCallbackClass:
         current_node_id = incoming_message["channel"].decode("ascii").split("_")[1] #this is only redis dependent line
         updated_node_cache, keep_publish = RedisCallbackClass.update_node_cache(incoming_message, current_node_id)
         
+        print(current_node_id,keep_publish)
         if keep_publish:
             stop_countdown = NodeStateStore("redis").fetch_node(current_node_id,"stop_countdown")
             outgoing_neighbors = NodeStateStore("redis").fetch_node(current_node_id,"outgoing_neighbors")
@@ -29,6 +30,7 @@ class RedisCallbackClass:
                         new_outgoing_message = \
                         RedisCallbackClass.compute_outgoing_message(input_function,updated_node_cache,
                             current_node_id,to_node_id,from_node_id)
+                        print(current_node_id,new_outgoing_message)
                         RedisCallbackClass.propagate_message(send_to_channel_name, new_outgoing_message, pubsub)
                         NodeStateStore("redis").countdown_by_one(current_node_id)
             elif stop_countdown == 0:

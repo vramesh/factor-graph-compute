@@ -34,7 +34,8 @@ class Node:
     def send_initial_messages(self):
         for neighbor in self.outgoing_neighbors_with_values:
             channel_id = (self.node_id + "_" + neighbor).encode('ascii') #encode
-            self.pubsub.broker.publish(channel_id, self.outgoing_neighbors_with_values[neighbor])
+            if self.outgoing_neighbors_with_values[neighbor] != None:
+                self.pubsub.broker.publish(channel_id, self.outgoing_neighbors_with_values[neighbor])
 
     def get_current_cached(self):
         return NodeStateStore("redis").fetch_node(self.node_id,"messages")

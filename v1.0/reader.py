@@ -6,17 +6,23 @@ class FactorGraphReader:
     def register_pubsub_from_factor_graph_file(path_to_input_file, pubsub, wrapper_var_function, wrapper_fac_function, factor_graph):
         (adjacency_dict_var,adjacency_dict_fac, outgoing_neighbors_dict, node_dict_var, node_dict_fac) =\
          FactorGraphReader.read_file_factor_graph(path_to_input_file) #{1:[2,3]}
-        num_node = len(adjacency_dict_var)
+        print(adjacency_dict_var, adjacency_dict_fac)
 
-        for variable_id in adjacency_dict_var:
-            initial_messages_var = dict(adjacency_dict_var[variable_id])
+        for variable_id in node_dict_var:
+            if variable_id in adjacency_dict_var:
+                initial_messages_var = dict(adjacency_dict_var[variable_id])
+            else:
+                initial_messages_var = dict()
             node_data = node_dict_var[variable_id]
             outgoing_neighbors = outgoing_neighbors_dict[variable_id]
             variable_node = Node(variable_id,"variable",wrapper_var_function,initial_messages_var,node_data,pubsub,outgoing_neighbors)
             factor_graph.variable_nodes.append(variable_node)
 
-        for factor_id in adjacency_dict_fac:
-            initial_messages_fac = dict(adjacency_dict_fac[factor_id])
+        for factor_id in node_dict_fac:
+            if factor_id in adjacency_dict_fac:
+                initial_messages_fac = dict(adjacency_dict_fac[factor_id])
+            else:
+                initial_messages_fac = dict()
             node_data = node_dict_fac[factor_id]
             outgoing_neighbors = outgoing_neighbors_dict[factor_id]
             factor_node = Node(factor_id,"factor",wrapper_fac_function,initial_messages_fac,node_data,pubsub,outgoing_neighbors)
@@ -24,13 +30,13 @@ class FactorGraphReader:
 
         for variable_id in adjacency_dict_var:
             for (factor_id,initial_message) in adjacency_dict_var[variable_id]:
-                channel_name = variable_id + "_" + factor_id
+                channel_name = factor_id + "_" + variable_id
                 edge = Edge(variable_id,factor_id, channel_name, pubsub)
                 factor_graph.edges.append(edge)
 
         for factor_id in adjacency_dict_fac:
             for (variable_id,initial_message) in adjacency_dict_fac[factor_id]:
-                channel_name = factor_id + "_" + variable_id
+                channel_name = variable_id + "_" + factor_id
                 edge = Edge(factor_id,variable_id, channel_name, pubsub)
                 factor_graph.edges.append(edge)
 
@@ -73,15 +79,15 @@ class FactorGraphReader:
                 else:
                     raise ValueError("Name format is wrong")
 
-                if x not in outgoing_neighbors_dict:
-                    outgoing_neighbors_dict[x] = {y:initial_incoming_message}
-                else:
-                    outgoing_neighbors_dict[x][y] = initial_incoming_message
-
                 if y in add_to_adjacency_dict:
                     add_to_adjacency_dict[y].append((x,initial_incoming_message))
                 else:
                     add_to_adjacency_dict[y] = [(x,initial_incoming_message)]
+
+                if x not in outgoing_neighbors_dict:
+                    outgoing_neighbors_dict[x] = {y:initial_incoming_message}
+                else:
+                    outgoing_neighbors_dict[x][y] = initial_incoming_message
 
                 line_index += 1
 

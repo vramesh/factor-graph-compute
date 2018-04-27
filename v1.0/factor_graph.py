@@ -55,7 +55,7 @@ class FactorGraph:
         # for node in self.variable_nodes:
         # for node in self.factor_nodes:
         #     node.receive_messages_from_neighbors()
-        for node in self.variable_nodes:
+        for node in self.factor_nodes:
             node.send_initial_messages()
 
     def get_result(self):
@@ -82,7 +82,7 @@ if __name__ == "__main__":
         "pubsub_choice": "redis",
         "synchronous": "asynchronous"
     }
-    path_to_input_file = "examples/hmm_simple_factor_graph.txt"
+    path_to_input_file = "examples/hmm_simple_factor_graph_ver_2.txt"
 
     # config = {
     #     "algorithm": "page_rank",
