@@ -14,8 +14,8 @@ class NodeStateStore: #node state manager
     def fetch_node(self, node_id, field):
         return self.state_store_spec.get_data(node_id,field)
 
-    def create_node_state(self, node_id, initial_messages, node_type, node_data):
-        self.state_store_spec.create_node_state(node_id, initial_messages, node_type, node_data)
+    def create_node_state(self, node_id, initial_messages, node_type, node_data, outgoing_neighbors):
+        self.state_store_spec.create_node_state(node_id, initial_messages, node_type, node_data, outgoing_neighbors)
 
     def countdown_by_one(self, node_id):
         self.state_store_spec.countdown_by_one(node_id)
@@ -41,15 +41,17 @@ class RedisNodeStateStore:
         current_countdown = self.get_data(node_id,'stop_countdown')
         self.set_data(node_id,current_countdown-1,'stop_countdown')
 
-    def create_node_state(self, node_id, initial_messages, node_type, node_data,
+    def create_node_state(self, node_id, initial_messages, node_type, node_data, outgoing_neighbors,
             stop_countdown=50):
         #id -> {"messages": , "type", "data"}
         pickle_initial_messages = pickle.dumps(initial_messages)
         pickle_node_type = pickle.dumps(node_type)
         pickle_node_data = pickle.dumps(node_data)
+        pickle_outgoing_neighbors = pickle.dumps(outgoing_neighbors)
         pickle_stop_countdown = pickle.dumps(stop_countdown)
         data_dict = {"messages": pickle_initial_messages, "node_type": pickle_node_type,
-            "node_data": pickle_node_data, "stop_countdown": pickle_stop_countdown}
+            "node_data": pickle_node_data, "stop_countdown": pickle_stop_countdown,
+            "outgoing_neighbors": pickle_outgoing_neighbors}
         self.redis.hmset(node_id, data_dict)
         return True
 

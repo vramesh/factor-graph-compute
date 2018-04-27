@@ -16,13 +16,14 @@ class RedisCallbackClass:
         
         if keep_publish:
             stop_countdown = NodeStateStore("redis").fetch_node(current_node_id,"stop_countdown")
+            outgoing_neighbors = NodeStateStore("redis").fetch_node(current_node_id,"outgoing_neighbors")
 
             debug = False
             
             if stop_countdown > 0:
                 # this is slightly inefficient implementation: should move for loop
                 # to within the update_var / update_fac methods
-                for to_node_id in updated_node_cache:
+                for to_node_id in outgoing_neighbors:
                     if int(to_node_id[1:]) != int(from_node_id[1:]):
                         send_to_channel_name = current_node_id + "_" + to_node_id
                         new_outgoing_message = \

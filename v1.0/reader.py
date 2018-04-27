@@ -4,19 +4,22 @@ import ast
 
 class FactorGraphReader:
     def register_pubsub_from_factor_graph_file(path_to_input_file, pubsub, wrapper_var_function, wrapper_fac_function, factor_graph):
-        (adjacency_dict_var,adjacency_dict_fac, node_dict_var, node_dict_fac) = FactorGraphReader.read_file_factor_graph(path_to_input_file) #{1:[2,3]}
+        (adjacency_dict_var,adjacency_dict_fac, outgoing_neighbors_dict, node_dict_var, node_dict_fac) =\
+         FactorGraphReader.read_file_factor_graph(path_to_input_file) #{1:[2,3]}
         num_node = len(adjacency_dict_var)
 
         for variable_id in adjacency_dict_var:
             initial_messages_var = dict(adjacency_dict_var[variable_id])
             node_data = node_dict_var[variable_id]
-            variable_node = Node(variable_id,"variable",wrapper_var_function,initial_messages_var,node_data,pubsub)
+            outgoing_neighbors = outgoing_neighbors_dict[variable_id]
+            variable_node = Node(variable_id,"variable",wrapper_var_function,initial_messages_var,node_data,pubsub,outgoing_neighbors)
             factor_graph.variable_nodes.append(variable_node)
 
         for factor_id in adjacency_dict_fac:
             initial_messages_fac = dict(adjacency_dict_fac[factor_id])
             node_data = node_dict_fac[factor_id]
-            factor_node = Node(factor_id,"factor",wrapper_fac_function,initial_messages_fac,node_data,pubsub)
+            outgoing_neighbors = outgoing_neighbors_dict[factor_id]
+            factor_node = Node(factor_id,"factor",wrapper_fac_function,initial_messages_fac,node_data,pubsub,outgoing_neighbors)
             factor_graph.factor_nodes.append(factor_node)
 
         for variable_id in adjacency_dict_var:
@@ -36,6 +39,7 @@ class FactorGraphReader:
     def read_file_factor_graph(path_to_input_file): 
         adjacency_dict_var = dict() #key: variable index, value: list of factor index
         adjacency_dict_fac = dict()
+        outgoing_neighbors_dict = dict()
         node_dict_var = dict()
         node_dict_fac = dict()
         with open(path_to_input_file) as f:
@@ -69,6 +73,11 @@ class FactorGraphReader:
                 else:
                     raise ValueError("Name format is wrong")
 
+                if x not in outgoing_neighbors_dict:
+                    outgoing_neighbors_dict[x] = {y:initial_incoming_message}
+                else:
+                    outgoing_neighbors_dict[x][y] = initial_incoming_message
+
                 if y in add_to_adjacency_dict:
                     add_to_adjacency_dict[y].append((x,initial_incoming_message))
                 else:
@@ -91,7 +100,7 @@ class FactorGraphReader:
                 line_index += 1
 
 
-        return (adjacency_dict_var,adjacency_dict_fac, node_dict_var, node_dict_fac)
+        return (adjacency_dict_var,adjacency_dict_fac, outgoing_neighbors_dict, node_dict_var, node_dict_fac)
 
 
 

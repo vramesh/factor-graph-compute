@@ -53,8 +53,10 @@ class FactorGraph:
 
     def run(self):
         # for node in self.variable_nodes:
-        for node in self.factor_nodes:
-            node.receive_messages_from_neighbors()
+        # for node in self.factor_nodes:
+        #     node.receive_messages_from_neighbors()
+        for node in self.variable_nodes:
+            node.send_initial_messages()
 
     def get_result(self):
         results = list()
@@ -75,19 +77,19 @@ if __name__ == "__main__":
     r.flushall()
 
 
-    # config = {
-    #     "algorithm": "sum_product",
-    #     "pubsub_choice": "redis",
-    #     "synchronous": "asynchronous"
-    # }
-    # path_to_input_file = "examples/hmm_simple_factor_graph_ver_2.txt"
-
     config = {
-        "algorithm": "page_rank",
+        "algorithm": "sum_product",
         "pubsub_choice": "redis",
         "synchronous": "asynchronous"
     }
-    path_to_input_file = "examples/result_page_rank_factor_graph.txt"
+    path_to_input_file = "examples/hmm_simple_factor_graph.txt"
+
+    # config = {
+    #     "algorithm": "page_rank",
+    #     "pubsub_choice": "redis",
+    #     "synchronous": "asynchronous"
+    # }
+    # path_to_input_file = "examples/result_page_rank_factor_graph.txt"
 
     try_fg = FactorGraph(path_to_input_file, config)
     try_fg.run()
