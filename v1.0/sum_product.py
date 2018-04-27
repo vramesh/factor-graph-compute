@@ -16,7 +16,7 @@ def sum_product_update_var(state, messages, sender_id, recipient_id,
         return
     variable_index = sender_id[1:]
     factor_index = recipient_id[1:]
-    message_product = np.ones(2)
+    message_product = np.array(state)
     for _, message in messages.items():
         message_product *= np.array(message)
     outgoing_message = normalize_message(message_product/np.array(messages[recipient_id]))
@@ -25,7 +25,7 @@ def sum_product_update_var(state, messages, sender_id, recipient_id,
 def sum_product_update_fac(state, messages, sender_id, recipient_id,
         from_node_id):
     if recipient_id == from_node_id:
-        return
+        return 
     variable_index = sender_id[1:]
     factor_index = recipient_id[1:]
     factor_function = transition_factor_function 

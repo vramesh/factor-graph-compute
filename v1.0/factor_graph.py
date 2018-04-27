@@ -36,15 +36,15 @@ class FactorGraph:
         update_fac_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[self.algorithm]["update_fac"]
         wrapper_fac_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_fac_function, self.pubsub)
 
-        self = FactorGraphReader.register_pubsub_from_pagerank_adjacency_list(self.path_to_input_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
+        self = FactorGraphReader.register_pubsub_from_factor_graph_file(self.path_to_input_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
         
         '''
         if (self.algorithm == "page_rank"):
             convert_to_page_rank_factor_graph_file(self.path_to_input_file,self.path_to_factor_graph_file)
-            self = FactorGraphReader.register_pubsub_from_pagerank_adjacency_list(self.path_to_factor_graph_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
+            self = FactorGraphReader.register_pubsub_from_factor_graph_file(self.path_to_factor_graph_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
         elif (self.algorithm == "try_pickle"):
             self.path_to_factor_graph_file = "examples/try_pickle_fg_input.txt"
-            self = FactorGraphReader.register_pubsub_from_pagerank_adjacency_list(self.path_to_factor_graph_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
+            self = FactorGraphReader.register_pubsub_from_factor_graph_file(self.path_to_factor_graph_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
         
         else:
             print("Haven't implemented this algorithm yet")
@@ -52,7 +52,7 @@ class FactorGraph:
 
 
     def run(self):
-#        for node in self.variable_nodes:
+        # for node in self.variable_nodes:
         for node in self.factor_nodes:
             node.receive_messages_from_neighbors()
 
@@ -75,12 +75,19 @@ if __name__ == "__main__":
     r.flushall()
 
 
+    # config = {
+    #     "algorithm": "sum_product",
+    #     "pubsub_choice": "redis",
+    #     "synchronous": "asynchronous"
+    # }
+    # path_to_input_file = "examples/hmm_simple_factor_graph_ver_2.txt"
+
     config = {
-        "algorithm": "sum_product",
+        "algorithm": "page_rank",
         "pubsub_choice": "redis",
         "synchronous": "asynchronous"
     }
-    path_to_input_file = "examples/hmm_simple_factor_graph.txt"
+    path_to_input_file = "examples/result_page_rank_factor_graph.txt"
 
     try_fg = FactorGraph(path_to_input_file, config)
     try_fg.run()
