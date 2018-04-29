@@ -24,15 +24,25 @@ def sum_product_update_var(state, messages, sender_id, recipient_id,
         outgoing_message = normalize_message(message_product/np.array(messages[recipient_id]))
     else:
         outgoing_message = normalize_message(message_product)
-    print("var", from_node_id, sender_id, recipient_id, outgoing_message)
     return outgoing_message
 
 def sum_product_update_fac(state, messages, sender_id, recipient_id,
         from_node_id):
     if recipient_id == from_node_id:
         return 
-    outgoing_message = np.dot(np.array(state),np.array(messages[from_node_id])) # not always correct
-    
+
+    state_numpy = np.array(state)
+    dimension = len(state_numpy.shape)
+    if dimension == 2:
+        outgoing_message = np.dot(np.array(state),np.array(messages[from_node_id])) # not always correct
+
+    elif dimension == 3:
+        if recipient_id > from_node_id:
+            outgoing_message = np.dot(np.array(state[0]),np.array(messages[from_node_id]))
+        else:
+            outgoing_message = np.dot(np.array(state[1]),np.array(messages[from_node_id]))
+
+
     # variable_index = sender_id[1:]
     # factor_index = recipient_id[1:]
     # factor_function = transition_factor_function 
@@ -45,6 +55,8 @@ def sum_product_update_fac(state, messages, sender_id, recipient_id,
     #         node_id_message in enumerate(messages.items())}
             
     # recipient_index = node_index_from_node_id[recipient_id] 
+
+    # outgoing_message = np.dot(np.array(state[recipient_index]),np.array(messages[from_node_id]))
 
     # index_from_value = {-1: 0, 1: 1}
 
@@ -66,7 +78,6 @@ def sum_product_update_fac(state, messages, sender_id, recipient_id,
     # outgoing_message = outgoing_message.reshape((2, int(outgoing_message.shape[0]/2))) 
     # outgoing_message = np.sum(outgoing_message, axis=1)
 
-    print("fac", from_node_id, sender_id, recipient_id, outgoing_message)
     return outgoing_message
 
 def normalize_message(message):

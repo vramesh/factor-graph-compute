@@ -83,7 +83,7 @@ if __name__ == "__main__":
         "pubsub_choice": "redis",
         "synchronous": "asynchronous"
     }
-    path_to_input_file = "examples/hmm_simple_factor_graph_ver_6.txt"
+    path_to_input_file = "examples/hmm_simple_factor_graph_ver_7.txt"
 
     # config = {
     #     "algorithm": "page_rank",
