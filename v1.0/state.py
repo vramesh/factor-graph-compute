@@ -42,7 +42,7 @@ class RedisNodeStateStore:
         self.set_data(node_id,current_countdown-1,'stop_countdown')
 
     def create_node_state(self, node_id, initial_messages, node_type, node_data, outgoing_neighbors,
-            stop_countdown=50):
+            stop_countdown=100):
         #id -> {"messages": , "type", "data"}
         pickle_initial_messages = pickle.dumps(initial_messages)
         pickle_node_type = pickle.dumps(node_type)
@@ -56,13 +56,17 @@ class RedisNodeStateStore:
         return True
 
     def get_data(self,node_id,field,is_string=False): # pickle back to str or dict 
+        # self.lock_dict[node_id].acquire()
         message = self.redis.hget(node_id, field)
+        # self.lock_dict[node_id].release()
         unpickle_message = pickle.loads(message)
         return unpickle_message
 
     def set_data(self, node_id, to_be_set_message, field): # if we want to pickle, pickle here
         pickle_message = pickle.dumps(to_be_set_message)
+        # self.lock_dict[node_id].acquire()
         self.redis.hset(node_id, field, pickle_message)
+        # self.lock_dict[node_id].release()
         return True
 
     def decryptor(self,data,is_string=False):

@@ -46,17 +46,17 @@ class RedisBroker:
         def start_subscriber(subscriber_id):
             while True:
                 message = self.subscribers[subscriber_id]["redis_pubsub"].get_message()
-                if message:
-                    print("Got message! in " + subscriber_id + str(message))
+                if message is not None:
+                    print("Got message! in " + subscriber_id + " " + str(message))
                 # else:
                 #     print("waiting")
-                #time.sleep(0.1)
+                time.sleep(0.001)
 
         for subscriber_id in self.subscribers:
-#            process = Thread(target=start_subscriber,
-#                    args=(subscriber_id,))
-            process = Process(target=start_subscriber,
-                    args=(subscriber_id,))
+            process = Thread(target=start_subscriber,
+                   args=(subscriber_id,))
+            # process = Process(target=start_subscriber,
+            #         args=(subscriber_id,))
             process.daemon = True
             process.start()
 

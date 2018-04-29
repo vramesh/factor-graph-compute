@@ -6,7 +6,6 @@ class FactorGraphReader:
     def register_pubsub_from_factor_graph_file(path_to_input_file, pubsub, wrapper_var_function, wrapper_fac_function, factor_graph):
         (adjacency_dict_var,adjacency_dict_fac, outgoing_neighbors_dict, node_dict_var, node_dict_fac) =\
          FactorGraphReader.read_file_factor_graph(path_to_input_file) #{1:[2,3]}
-        print(adjacency_dict_var, adjacency_dict_fac)
 
         for variable_id in node_dict_var:
             if variable_id in adjacency_dict_var:
@@ -31,13 +30,13 @@ class FactorGraphReader:
         for variable_id in adjacency_dict_var:
             for (factor_id,initial_message) in adjacency_dict_var[variable_id]:
                 channel_name = factor_id + "_" + variable_id
-                edge = Edge(variable_id,factor_id, channel_name, pubsub)
+                edge = Edge(factor_id, variable_id, channel_name, pubsub)
                 factor_graph.edges.append(edge)
 
         for factor_id in adjacency_dict_fac:
             for (variable_id,initial_message) in adjacency_dict_fac[factor_id]:
                 channel_name = variable_id + "_" + factor_id
-                edge = Edge(factor_id,variable_id, channel_name, pubsub)
+                edge = Edge(variable_id,factor_id, channel_name, pubsub)
                 factor_graph.edges.append(edge)
 
         return factor_graph

@@ -18,47 +18,55 @@ def sum_product_update_var(state, messages, sender_id, recipient_id,
     factor_index = recipient_id[1:]
     message_product = np.array(state)
     for _, message in messages.items():
-        message_product *= np.array(message)
-    outgoing_message = normalize_message(message_product/np.array(messages[recipient_id]))
+        if message is not None:
+            message_product *= np.array(message)
+    if messages[recipient_id] is not None:
+        outgoing_message = normalize_message(message_product/np.array(messages[recipient_id]))
+    else:
+        outgoing_message = normalize_message(message_product)
+    print("var", from_node_id, sender_id, recipient_id, outgoing_message)
     return outgoing_message
 
 def sum_product_update_fac(state, messages, sender_id, recipient_id,
         from_node_id):
     if recipient_id == from_node_id:
         return 
-    variable_index = sender_id[1:]
-    factor_index = recipient_id[1:]
-    factor_function = transition_factor_function 
+    outgoing_message = np.dot(np.array(state),np.array(messages[from_node_id])) # not always correct
+    
+    # variable_index = sender_id[1:]
+    # factor_index = recipient_id[1:]
+    # factor_function = transition_factor_function 
 
-    messages = OrderedDict(sorted(messages.items(), key=lambda t: t[0]))
-    node_from_node_index = {index: node_id_message[0] for index, node_id_message in
-            enumerate(messages.items())}
+    # messages = OrderedDict(sorted(messages.items(), key=lambda t: t[0]))
+    # node_from_node_index = {index: node_id_message[0] for index, node_id_message in
+    #         enumerate(messages.items())}
 
-    node_index_from_node_id = {node_id_message[0]: node_index for node_index,
-            node_id_message in enumerate(messages.items())}
+    # node_index_from_node_id = {node_id_message[0]: node_index for node_index,
+    #         node_id_message in enumerate(messages.items())}
             
-    recipient_index = node_index_from_node_id[recipient_id] 
+    # recipient_index = node_index_from_node_id[recipient_id] 
 
-    index_from_value = {-1: 0, 1: 1}
+    # index_from_value = {-1: 0, 1: 1}
 
-    factor_function_inputs = cartesian(np.array([np.array([-1,1])]*(len(messages))))
-    factor_function_inputs[factor_function_inputs[:,recipient_index].argsort()]
+    # factor_function_inputs = cartesian(np.array([np.array([-1,1])]*(len(messages))))
+    # factor_function_inputs[factor_function_inputs[:,recipient_index].argsort()]
 
-    outgoing_message = np.array([])
-    for input_vector in factor_function_inputs:
-        factor_function_value = factor_function(input_vector)
+    # outgoing_message = np.array([])
+    # for input_vector in factor_function_inputs:
+    #     factor_function_value = factor_function(input_vector)
 
-        for node_index, message_value in enumerate(input_vector):
-            node_id = node_from_node_index[node_index]
-            if node_id != recipient_id:
-                node_message = messages[node_id]
-                message_to_multiply = node_message[index_from_value[message_value]] 
-                factor_function_value *= message_to_multiply
-        outgoing_message = np.append(outgoing_message, factor_function_value)
+    #     for node_index, message_value in enumerate(input_vector):
+    #         node_id = node_from_node_index[node_index]
+    #         if node_id != recipient_id:
+    #             node_message = messages[node_id]
+    #             message_to_multiply = node_message[index_from_value[message_value]] 
+    #             factor_function_value *= message_to_multiply
+    #     outgoing_message = np.append(outgoing_message, factor_function_value)
 
-    outgoing_message = outgoing_message.reshape((2, int(outgoing_message.shape[0]/2))) 
-    outgoing_message = np.sum(outgoing_message, axis=1)
+    # outgoing_message = outgoing_message.reshape((2, int(outgoing_message.shape[0]/2))) 
+    # outgoing_message = np.sum(outgoing_message, axis=1)
 
+    print("fac", from_node_id, sender_id, recipient_id, outgoing_message)
     return outgoing_message
 
 def normalize_message(message):

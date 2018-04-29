@@ -14,7 +14,7 @@ class RedisCallbackClass:
         current_node_id = incoming_message["channel"].decode("ascii").split("_")[1] #this is only redis dependent line
         updated_node_cache, keep_publish = RedisCallbackClass.update_node_cache(incoming_message, current_node_id)
         
-        print(current_node_id,keep_publish)
+        print("Got message " + from_node_id + " " + current_node_id + " " + str(pickle.loads(incoming_message["data"])))
         if keep_publish:
             stop_countdown = NodeStateStore("redis").fetch_node(current_node_id,"stop_countdown")
             outgoing_neighbors = NodeStateStore("redis").fetch_node(current_node_id,"outgoing_neighbors")
@@ -24,15 +24,15 @@ class RedisCallbackClass:
             if stop_countdown > 0:
                 # this is slightly inefficient implementation: should move for loop
                 # to within the update_var / update_fac methods
+                NodeStateStore("redis").countdown_by_one(current_node_id)
+
                 for to_node_id in outgoing_neighbors:
-                    if int(to_node_id[1:]) != int(from_node_id[1:]):
+                    if to_node_id[1:] != from_node_id[1:]:
                         send_to_channel_name = current_node_id + "_" + to_node_id
                         new_outgoing_message = \
                         RedisCallbackClass.compute_outgoing_message(input_function,updated_node_cache,
                             current_node_id,to_node_id,from_node_id)
-                        print(current_node_id,new_outgoing_message)
                         RedisCallbackClass.propagate_message(send_to_channel_name, new_outgoing_message, pubsub)
-                        NodeStateStore("redis").countdown_by_one(current_node_id)
             elif stop_countdown == 0:
                 print("terminated")
 
@@ -41,12 +41,12 @@ class RedisCallbackClass:
         modified_incoming_message["channel"] = incoming_message["channel"].decode('ascii')
         modified_incoming_message["data"] = pickle.loads(incoming_message["data"])
 
-        updated_node_cache = NodeStateStore("redis").update_node(modified_incoming_message, node_id)
         # print(updated_node_cache)
         
         if modified_incoming_message["data"] is None:
             return updated_node_cache, False
         else:
+            updated_node_cache = NodeStateStore("redis").update_node(modified_incoming_message, node_id)
             return updated_node_cache, True
 
     def compute_outgoing_message(input_function,updated_node_cache,current_node_id,to_node_id,from_node_id):

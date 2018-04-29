@@ -32,8 +32,10 @@ class Node:
     #         self.pubsub.broker.publish(channel_id, self.initial_node_message_cache[sender])
 
     def send_initial_messages(self):
+        # time.sleep(0.1)  # veru crucial, don't know why
         for neighbor in self.outgoing_neighbors_with_values:
             channel_id = (self.node_id + "_" + neighbor).encode('ascii') #encode
+            print("publish from " + self.node_id + " to " + neighbor)
             if self.outgoing_neighbors_with_values[neighbor] != None:
                 self.pubsub.broker.publish(channel_id, self.outgoing_neighbors_with_values[neighbor])
 
@@ -46,7 +48,7 @@ class Node:
             print(node_cache)
             if len(node_cache.items()) > 1:
                 un_normalized_probability_vector = np.prod(np.array([message for _, message in
-                    node_cache.items()]), axis=1)
+                    node_cache.items()]), axis=0)
             else:
                 un_normalized_probability_vector = np.array([message for _,
                     message in node_cache.items()])[0]
