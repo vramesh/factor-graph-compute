@@ -13,38 +13,13 @@ class GraphicalModel:
             self.initialize_nodes_and_edges() 
 
     def initialize_nodes_and_edges(self): 
-        """
-        populates nodes and edges in GraphicalModel 
-        currently manually makes nodes but should read input file
-        """
-
-#        self = FactorGraphReader.register_pubsub_from_pagerank_adjacency_list(self.path_to_input_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
-        
-        '''
-        if (self.algorithm == "page_rank"):
-            convert_to_page_rank_factor_graph_file(self.path_to_input_file,self.path_to_factor_graph_file)
-            self = FactorGraphReader.register_pubsub_from_pagerank_adjacency_list(self.path_to_factor_graph_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
-        elif (self.algorithm == "try_pickle"):
-            self.path_to_factor_graph_file = "examples/try_pickle_fg_input.txt"
-            self = FactorGraphReader.register_pubsub_from_pagerank_adjacency_list(self.path_to_factor_graph_file, self.pubsub, wrapper_var_function, wrapper_fac_function, self)
-        
-        else:
-            print("Haven't implemented this algorithm yet")
-        '''
+        pass
 
     def write_to_file(self):
         pass
 
     def convert_to_factor_graph_and_write_file(self):
-        for edge, probability in self.edges.items():
-            ## create factor node for edge
-            ## create variable node for sink node 
-            ## create variable-factor edge for sink node 
-            ## create variable node for source node 
-            ## create variable-factor edge for source node 
-
-        for node_probability in self.nodes.items():
-            ## create variable node
+        pass
 
 class HiddenMarkovModel(GraphicalModel):
     def __init__(self, number_of_variables, hidden_transition_probability_matrix,
@@ -66,17 +41,49 @@ class HiddenMarkovModel(GraphicalModel):
                 node_id, probability in self.nodes.items() if
                 self.__get_node_type(node_id) is 'sample'}
 
-    '''
-    def convert_to_factor_graph(self):
+    def write_as_factor_graph(self, observations, file_name):
         factor_edges = {}
         factor_nodes = {}
         for node_id, probability in self.nodes.items():
-            if self.__get_node_type(node_id) is 'hidden':
-                self.__create_factor_graph_variable_node()
-                if not self.__is_initial_hidden_node(self, node_id):
-                    self.__create_factor_graph_factor_node()
-                    self.__create_factor_graph_edges()
-    '''
+            with open(file_name, 'w') as f:
+                pass
+
+    def convert_to_factor_graph_old(self, observations, file_name):
+        factor_node_initial_messages = {}
+        with open(file_name, 'w+') as f:
+            for node_id, probability in self.nodes.items():
+                if self.__get_node_type(node_id) is 'hidden' or 'x' in node_id:
+                    if self.__is_initial_hidden_node(node_id):
+                        initial_message = self.initial_variable_probability
+                        factor_node_id = None
+                    else:
+                        initial_message = np.ones(len(self.hidden_alphabet))
+                        factor_node_id = node_id.replace('x', 'f') + \
+                        str(int(node_id[1:]) - 1)
+                    factor_node_initial_messages[node_id] = initial_message
+                    observation_id = node_id.replace('x', 'y')
+                    observation = observations[observation_id]
+                    observation_value_index = self.sample_alphabet.index(int(observation))
+                    observation_conditional_probability = \
+                    self.sample_probability[observation_value_index]
+                    ## get sample observation
+                    initial_message *= observation_conditional_probability
+                    variable_node_id = node_id.replace('x', 'v')
+                    if factor_node_id is not None:
+                        f.write(variable_node_id + ' ' + factor_node_id + \
+                                str(initial_message.tolist()) + '\n')
+                        f.write(factor_node_id + ' ' + variable_node_id + \
+                                str(np.ones(len(self.hidden_alphabet)).tolist()) + '\n')
+                        previous_variable_node_id = \
+                        self.__get_previous_hidden_node_id(node_id)
+                        previous_initial_message = \
+                        factor_node_initial_messages[previous_variable_node_id]
+                        f.write(previous_variable_node_id + ' ' + factor_node_id + \
+                                str(previous_initial_message.tolist()) + '\n')
+                        f.write(factor_node_id + ' ' + previous_variable_node_id + \
+                                str(np.ones(len(self.hidden_alphabet)).tolist()) + '\n')
+                ## create factor node
+                ## create factor node data
 
     def __generate_observation_sample(self, sample_variable_node_id):
         sample_probability = self.nodes[sample_variable_node_id]
