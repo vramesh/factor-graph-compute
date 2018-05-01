@@ -20,4 +20,5 @@ if __name__ == '__main__':
             hidden_alphabet, sample_alphabet)
     observations = hmm.generate_observations()
     print('observations', observations)
+    hmm.convert_to_factor_graph_old(observations, 'test_hmm_conversion')
 
