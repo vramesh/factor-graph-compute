@@ -56,4 +56,5 @@ class RedisCallbackClass:
         return new_outgoing_message
 
     def propagate_message(channel_name, new_outgoing_message, pubsub):
-        pubsub.publish(channel_name, new_outgoing_message)
+        if new_outgoing_message != None: #assuming that 
+            pubsub.publish(channel_name, new_outgoing_message)
