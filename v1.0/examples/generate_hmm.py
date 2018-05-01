@@ -1,30 +1,23 @@
 import numpy as np
-from hmm_factor_functions import transition_hidden_param, observation_param
-
-def generate_hmm(transition_hidden_param=0.75, observation_param=0.9):
-    x1 = np.random.choice([-1,1], size=1,p=[0.5, 0.5])[0] 
-
-    x2 = np.random.choice([x1, -x1], size=1, p=[transition_hidden_param,
-        1-transition_hidden_param])[0]
-
-    y1 = np.random.choice([x1, 0, -x1], size=1, p=[observation_param,
-        (1-observation_param)/2,
-        (1-observation_param)/2])[0]
-
-    y2 = np.random.choice([x2, 0, -x2], size=1, p=[observation_param,
-        (1-observation_param)/2,
-        (1-observation_param)/2])[0]
-    return {'x1': x1,
-            'x2': x2,
-            'y1': y1,
-            'y2': y2}
+from graphical_model import HiddenMarkovModel
 
 if __name__ == '__main__':
-    hmm = generate_hmm()
-    with open('hmm_factor_graph.txt', 'w+') as f:
-        for variable, value in hmm.items():
-            f.write(
-            print(variable, ':', value)
+    hidden_param = 0.75
+    sample_param = 0.9
+    num_variables = 2
+    hidden_transition_probability_matrix = np.array([[hidden_param,
+        1-hidden_param], [1-hidden_param, hidden_param]])
+    sample_probability_matrix = np.array([[sample_param, (1-sample_param)/2,
+        (1-sample_param)/2], [(1-sample_param)/2, (1-sample_param)/2,
+            sample_param]]).T
+    
+    initial_variable_probability = np.array([0.5, 0.5])
+    hidden_alphabet = [-1, 1] 
+    sample_alphabet = [-1, 0, 1] 
 
-
+    hmm = HiddenMarkovModel(num_variables, hidden_transition_probability_matrix,
+            sample_probability_matrix, initial_variable_probability,
+            hidden_alphabet, sample_alphabet)
+    observations = hmm.generate_observations()
+    print('observations', observations)
 
