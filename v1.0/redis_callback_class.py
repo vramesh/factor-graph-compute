@@ -1,6 +1,5 @@
 from state import NodeStateStore
 import pickle
-import pdb
 
 class RedisCallbackClass:
     def __init__(self):

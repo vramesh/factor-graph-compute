@@ -14,7 +14,7 @@ v3 f23 None
 f23 v2 None
 f23 v3 None
 Vertices
-v01 None
+v01 None 
 v02 None
 v03 None
 v1 [0.75,0.25]

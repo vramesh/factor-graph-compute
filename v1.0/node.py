@@ -2,7 +2,6 @@ from state import NodeStateStore
 from redis_callback_class import RedisCallbackClass
 import numpy as np
 import time
-import pdb
 
 class Node:
     def __init__(self,node_id,node_type,node_function,initial_node_message_cache,
@@ -39,10 +38,6 @@ class Node:
             print("publish from " + self.node_id + " to " + neighbor)
             new_outgoing_message = self.outgoing_neighbors_with_values[neighbor]
             RedisCallbackClass.propagate_message(channel_id, new_outgoing_message, self.pubsub)
-            '''
-            if self.outgoing_neighbors_with_values[neighbor] != None:
-                self.pubsub.publish(channel_id, self.outgoing_neighbors_with_values[neighbor])
-            '''
 
     def get_current_cached(self):
         return NodeStateStore("redis").fetch_node(self.node_id,"messages")
