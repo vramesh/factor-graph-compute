@@ -12,6 +12,9 @@ pylint = "*"
 mock = "*"
 "autopep8" = "*"
 redis = "*"
+sklearn = "*"
+scipy = "*"
+attrdict = "*"
 
 
 [dev-packages]
