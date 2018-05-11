@@ -1,7 +1,24 @@
 import inspect
-import pagerank_converter
+import user_input_functions
+import argparse
 
-all_functions = inspect.getmembers(pagerank_converter, inspect.isfunction)
-print(all_functions)
-print(all_functions[0][0] == "convert_adjacency_list_input_file_to_pagerank_factor_graph_and_register_with_pubsub")
+all_functions = inspect.getmembers(user_input_functions, inspect.isfunction)
+
+func_dict = dict()
+for function_tuple in all_functions:
+	func_dict[function_tuple[0]] = function_tuple[1]
+print(func_dict)
+
+'''
+parser = argparse.ArgumentParser()
+parser.add_argument("file", type=str)
+parser.add_argument("functions", type=str)
+args = parser.parse_args()
+file = args.file
+functions_file = args.functions
+'''
+
+
+
+
 

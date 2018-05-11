@@ -11,7 +11,7 @@ config = {
     "pubsub_choice": "redis",
     "synchronous": "asynchronous"
 }
-path_to_input_file = "examples/hmm_simple_factor_graph_ver_7.txt"
+path_to_input_file = "examples/hmm_simple_factor_graph_ver_7_new_ui.txt"
 
 # config = {
 #     "algorithm": "page_rank",
