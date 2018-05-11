@@ -13,13 +13,6 @@ config = {
 }
 path_to_input_file = "examples/hmm_simple_factor_graph_ver_7_new_ui.txt"
 
-# config = {
-#     "algorithm": "page_rank",
-#     "pubsub_choice": "redis",
-#     "synchronous": "asynchronous"
-# }
-# path_to_input_file = "examples/result_page_rank_factor_graph.txt"
-
 fg = FactorGraph(path_to_input_file, config)
 fg.run()
 time.sleep(10)

@@ -3,16 +3,20 @@ from edge import Edge
 from node_update_functions import ALGORITHM_TO_UPDATE_FUNCTIONS
 from redis_callback_class import *
 import ast
+import inspect
+import user_input_functions
+
 
 class FactorGraphReader:
     def register_pubsub_from_factor_graph_file(factor_graph):
         (adjacency_dict_var,adjacency_dict_fac, outgoing_neighbors_dict, node_dict_var, node_dict_fac, node_function_var) =\
          FactorGraphReader.read_file_factor_graph_2(factor_graph.path_to_input_file) #{1:[2,3]}
 
-        update_var_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[factor_graph.algorithm]["update_var"]
-        wrapper_var_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_var_function, factor_graph.pubsub)
-        update_fac_function  = ALGORITHM_TO_UPDATE_FUNCTIONS[factor_graph.algorithm]["update_fac"]
-        wrapper_fac_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_fac_function, factor_graph.pubsub)
+        all_functions = inspect.getmembers(user_input_functions, inspect.isfunction)
+
+        func_dict = dict()
+        for function_tuple in all_functions:
+            func_dict[function_tuple[0]] = function_tuple[1]
 
 
         for variable_id in node_dict_var:
@@ -22,6 +26,9 @@ class FactorGraphReader:
                 initial_messages_var = dict()
             node_data = node_dict_var[variable_id]
             outgoing_neighbors = outgoing_neighbors_dict[variable_id]
+
+            update_var_function = func_dict[node_function_var[variable_id]]
+            wrapper_var_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_var_function, factor_graph.pubsub)
             variable_node = Node(variable_id,"variable",wrapper_var_function,initial_messages_var,node_data,factor_graph.pubsub,outgoing_neighbors)
             factor_graph.variable_nodes.append(variable_node)
 
@@ -32,6 +39,8 @@ class FactorGraphReader:
                 initial_messages_fac = dict()
             node_data = node_dict_fac[factor_id]
             outgoing_neighbors = outgoing_neighbors_dict[factor_id]
+            update_fac_function = func_dict[node_function_var[factor_id]]
+            wrapper_fac_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_fac_function, factor_graph.pubsub)
             factor_node = Node(factor_id,"factor",wrapper_fac_function,initial_messages_fac,node_data,factor_graph.pubsub,outgoing_neighbors)
             factor_graph.factor_nodes.append(factor_node)
 
