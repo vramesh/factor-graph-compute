@@ -20,10 +20,10 @@ class FactorGraphReader:
 
 
         for variable_id in node_dict_var:
+            initial_messages_var = dict()
             if variable_id in adjacency_dict_var:
                 initial_messages_var = dict(adjacency_dict_var[variable_id])
-            else:
-                initial_messages_var = dict()
+                
             node_data = node_dict_var[variable_id]
             outgoing_neighbors = outgoing_neighbors_dict[variable_id]
 
@@ -33,10 +33,10 @@ class FactorGraphReader:
             factor_graph.variable_nodes.append(variable_node)
 
         for factor_id in node_dict_fac:
+            initial_messages_fac = dict()
             if factor_id in adjacency_dict_fac:
                 initial_messages_fac = dict(adjacency_dict_fac[factor_id])
-            else:
-                initial_messages_fac = dict()
+                
             node_data = node_dict_fac[factor_id]
             outgoing_neighbors = outgoing_neighbors_dict[factor_id]
             update_fac_function = func_dict[node_function_var[factor_id]]
