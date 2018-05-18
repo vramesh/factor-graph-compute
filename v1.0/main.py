@@ -9,7 +9,8 @@ r.flushall()
 config = {
     "algorithm": "sum_product",
     "pubsub_choice": "redis",
-    "synchronous": "asynchronous"
+    "synchronous": "asynchronous",
+    "number_of_iter": 100
 }
 path_to_input_file = "examples/hmm_simple_factor_graph_ver_7_new_ui.txt"
 
