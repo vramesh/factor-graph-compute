@@ -2,11 +2,10 @@ from state import NodeStateStore
 from redis_callback_class import RedisCallbackClass
 import numpy as np
 import time
-import pdb
 
 class Node:
     def __init__(self,node_id,node_type,node_function,initial_node_message_cache,
-                    node_data,pubsub,outgoing_neighbors):
+                    node_data,pubsub,outgoing_neighbors, number_of_iter):
         self.node_id = node_id
         self.node_type = node_type
         self.node_data = node_data
@@ -16,7 +15,7 @@ class Node:
 
         self.pubsub = pubsub
         self.state_store = NodeStateStore("redis")
-        self.state_store.create_node_state(node_id,initial_node_message_cache,node_type,node_data,self.outgoing_neighbors_list)
+        self.state_store.create_node_state(node_id,initial_node_message_cache,node_type,node_data,self.outgoing_neighbors_list, number_of_iter)
         self.pubsub.register_publisher(node_id)
         self.pubsub.register_subscriber(node_id,node_function)
 
@@ -26,12 +25,6 @@ class Node:
     def get_sender_list(self):
         return self.initial_node_message_cache.keys()
 
-    # def receive_messages_from_neighbors(self):
-    #     time.sleep(0.1)
-    #     for sender in self.initial_node_message_cache:
-    #         channel_id = (sender + "_" + self.node_id).encode('ascii') #encode
-    #         self.pubsub.broker.publish(channel_id, self.initial_node_message_cache[sender])
-
     def send_initial_messages(self):
         # time.sleep(0.1)  # veru crucial, don't know why
         for neighbor in self.outgoing_neighbors_with_values:
@@ -39,10 +32,6 @@ class Node:
             print("publish from " + self.node_id + " to " + neighbor)
             new_outgoing_message = self.outgoing_neighbors_with_values[neighbor]
             RedisCallbackClass.propagate_message(channel_id, new_outgoing_message, self.pubsub)
-            '''
-            if self.outgoing_neighbors_with_values[neighbor] != None:
-                self.pubsub.publish(channel_id, self.outgoing_neighbors_with_values[neighbor])
-            '''
 
     def get_current_cached(self):
         return NodeStateStore("redis").fetch_node(self.node_id,"messages")
