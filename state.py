@@ -14,8 +14,8 @@ class NodeStateStore: #node state manager
     def fetch_node(self, node_id, field):
         return self.state_store_spec.get_data(node_id,field)
 
-    def create_node_state(self, node_id, initial_messages, node_type, node_data, outgoing_neighbors):
-        self.state_store_spec.create_node_state(node_id, initial_messages, node_type, node_data, outgoing_neighbors)
+    def create_node_state(self, node_id, initial_messages, node_type, node_data, outgoing_neighbors, number_of_iter):
+        self.state_store_spec.create_node_state(node_id, initial_messages, node_type, node_data, outgoing_neighbors, number_of_iter)
 
     def countdown_by_one(self, node_id):
         self.state_store_spec.countdown_by_one(node_id)
@@ -42,7 +42,7 @@ class RedisNodeStateStore:
         self.set_data(node_id,current_countdown-1,'stop_countdown')
 
     def create_node_state(self, node_id, initial_messages, node_type, node_data, outgoing_neighbors,
-            stop_countdown=100):
+            stop_countdown):
         #id -> {"messages": , "type", "data"}
         pickle_initial_messages = pickle.dumps(initial_messages)
         pickle_node_type = pickle.dumps(node_type)

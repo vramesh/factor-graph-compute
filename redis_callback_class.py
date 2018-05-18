@@ -39,8 +39,6 @@ class RedisCallbackClass:
         modified_incoming_message = dict()
         modified_incoming_message["channel"] = incoming_message["channel"].decode('ascii')
         modified_incoming_message["data"] = pickle.loads(incoming_message["data"])
-
-        # print(updated_node_cache)
         
         if modified_incoming_message["data"] is None:
             return updated_node_cache, False
@@ -55,7 +53,5 @@ class RedisCallbackClass:
         return new_outgoing_message
 
     def propagate_message(channel_name, new_outgoing_message, pubsub):
-        if new_outgoing_message is None:
-            pass
-        else:
+        if new_outgoing_message is not None:
             pubsub.publish(channel_name, new_outgoing_message)
