@@ -54,6 +54,8 @@ class FactorGraphReader:
                 edge = Edge(variable_id,factor_id, channel_name, factor_graph.pubsub)
                 factor_graph.edges.append(edge)
 
+        #create output overseer node
+
         return factor_graph
 
     def read_file_factor_graph(path_to_input_file): 
