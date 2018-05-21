@@ -21,7 +21,7 @@ class Node:
 
     def get_id(self):
         return self.node_id 
-        
+
     def get_initial_message_from_sender(self,sender):
         return self.initial_node_message_cache[sender]
 
@@ -32,7 +32,6 @@ class Node:
         # time.sleep(0.1)  # veru crucial, don't know why
         for neighbor in self.outgoing_neighbors_with_values:
             channel_id = (self.node_id + "_" + neighbor).encode('ascii') #encode
-            print("publish from " + self.node_id + " to " + neighbor)
             new_outgoing_message = self.outgoing_neighbors_with_values[neighbor]
             RedisCallbackClass.propagate_message(channel_id, new_outgoing_message, self.pubsub)
 
