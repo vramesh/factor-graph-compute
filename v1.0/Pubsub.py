@@ -20,7 +20,6 @@ class PubSub:  # how to map id to object?
 
     #these are called during FG.initialize_nodes_and_edges
     def register_channel(self, channel_id):
-        r = Redis()
         self.broker.add_channel(channel_id)
 
     def register_subscription(self, subscriber_id, channel_id):
@@ -32,4 +31,5 @@ class PubSub:  # how to map id to object?
 
     def publish(self, channel_id, message):
         self.broker.publish(channel_id,message)
+
 

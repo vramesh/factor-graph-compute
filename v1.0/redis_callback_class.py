@@ -8,7 +8,6 @@ class RedisCallbackClass:
     def message_pass_wrapper_for_redis(incoming_message, input_function, pubsub):
         #is the callback functions for redis to run on pubsub
         #message format from redis: {'pattern': None, 'type': 'subscribe', 'channel': 'my-second-channel', 'data': 1L}
-        
         from_node_id = incoming_message["channel"].decode("ascii").split("_")[0] #this is only redis dependent line
         current_node_id = incoming_message["channel"].decode("ascii").split("_")[1] #this is only redis dependent line
         updated_node_cache, keep_publish = RedisCallbackClass.update_node_cache(incoming_message, current_node_id)

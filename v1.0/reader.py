@@ -1,4 +1,5 @@
 from node import Node
+from stop_node import StopNode
 from edge import Edge
 from node_update_functions import ALGORITHM_TO_UPDATE_FUNCTIONS
 from redis_callback_class import *
@@ -18,6 +19,8 @@ class FactorGraphReader:
         for function_tuple in all_functions:
             func_dict[function_tuple[0]] = function_tuple[1]
 
+        all_channels = list()
+
 
         for variable_id in node_dict_var:
             initial_messages_var = dict()
@@ -28,7 +31,7 @@ class FactorGraphReader:
             outgoing_neighbors = outgoing_neighbors_dict[variable_id]
             update_var_function = func_dict[node_function_var[variable_id]]
             wrapper_var_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_var_function, factor_graph.pubsub)
-            variable_node = Node(variable_id,"variable",wrapper_var_function,initial_messages_var,node_data,factor_graph.pubsub,outgoing_neighbors, factor_graph.config["number_of_iter"])
+            variable_node = Node(variable_id,"variable",wrapper_var_function,initial_messages_var,node_data,factor_graph.pubsub,outgoing_neighbors, factor_graph.number_of_iter)
             factor_graph.variable_nodes.append(variable_node)
 
         for factor_id in node_dict_fac:
@@ -39,22 +42,27 @@ class FactorGraphReader:
             outgoing_neighbors = outgoing_neighbors_dict[factor_id]
             update_fac_function = func_dict[node_function_var[factor_id]]
             wrapper_fac_function = lambda incoming_message: RedisCallbackClass.message_pass_wrapper_for_redis(incoming_message, update_fac_function, factor_graph.pubsub)
-            factor_node = Node(factor_id,"factor",wrapper_fac_function,initial_messages_fac,node_data,factor_graph.pubsub,outgoing_neighbors, factor_graph.config["number_of_iter"])
+            factor_node = Node(factor_id,"factor",wrapper_fac_function,initial_messages_fac,node_data,factor_graph.pubsub,outgoing_neighbors, factor_graph.number_of_iter)
             factor_graph.factor_nodes.append(factor_node)
 
         for variable_id in adjacency_dict_var:
             for (factor_id,initial_message) in adjacency_dict_var[variable_id]:
                 channel_name = factor_id + "_" + variable_id
+                all_channels.append(channel_name)
                 edge = Edge(factor_id, variable_id, channel_name, factor_graph.pubsub)
                 factor_graph.edges.append(edge)
 
         for factor_id in adjacency_dict_fac:
             for (variable_id,initial_message) in adjacency_dict_fac[factor_id]:
                 channel_name = variable_id + "_" + factor_id
+                all_channels.append(channel_name)
                 edge = Edge(variable_id,factor_id, channel_name, factor_graph.pubsub)
                 factor_graph.edges.append(edge)
 
-        #create output overseer node
+        #create stop node and subscribe it to all channel
+        factor_graph.stop_node = StopNode("stop_node", factor_graph.pubsub, factor_graph.time_till_stop)
+        for channel_name in all_channels:
+            unused_edge = Edge(None,"stop_node",channel_name,factor_graph.pubsub)
 
         return factor_graph
 

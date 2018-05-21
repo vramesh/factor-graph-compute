@@ -19,6 +19,9 @@ class Node:
         self.pubsub.register_publisher(node_id)
         self.pubsub.register_subscriber(node_id,node_function)
 
+    def get_id(self):
+        return self.node_id 
+        
     def get_initial_message_from_sender(self,sender):
         return self.initial_node_message_cache[sender]
 
