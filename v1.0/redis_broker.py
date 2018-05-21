@@ -35,12 +35,9 @@ class RedisBroker:
         r = redis.Redis()
         self.subscribers[subscriber_id]["redis_pubsub"].subscribe(**{channel_id: callback_function})
 
-    def decrypt(self, x):
-        return str(x.decode("ascii")) if type(x) == bytes else x 
-
     def publish(self, channel_id, message):
         pickle_message = pickle.dumps(message)
-        self.redis_main.publish(self.decrypt(channel_id), pickle_message)
+        self.redis_main.publish(channel_id, pickle_message)
 
     def start(self):
         def start_subscriber(subscriber_id):
@@ -48,9 +45,7 @@ class RedisBroker:
                 message = self.subscribers[subscriber_id]["redis_pubsub"].get_message()
                 if message is not None:
                     print("Got message! in " + subscriber_id + " " + str(message))
-                # else:
-                #     print("waiting")
-                time.sleep(0.001)
+                # time.sleep(0.001)
 
         for subscriber_id in self.subscribers:
             process = Thread(target=start_subscriber,
