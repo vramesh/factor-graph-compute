@@ -37,3 +37,4 @@ RuntimeError: pubsub connection not set: did you forget to call subscribe() or p
 2. In progress, UI unintuitive, since users have to name a file a particular way and have manual input functions
 3. Pipenv is probably out of date, make list of dependencies through virtualenv testing
 4. get rid of manual countdown
+5. Tearing down and bring server back up results have lag/fails first time?
