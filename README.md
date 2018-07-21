@@ -16,7 +16,7 @@ python --version
 1. If you are already in the pipenv shell (`pipenv shell`), just run: `pylint <file or directory>`
 2. If you are not in the pipenv shell, you can run: `pipenv run pylint <file or directory>` 
 
-#To-Dos
+## To-Dos
 1. Branch new_ui has stop_node that has the following error for thread 1-3.
 
 ```  
@@ -34,3 +34,4 @@ Traceback (most recent call last):
     'pubsub connection not set: '
 RuntimeError: pubsub connection not set: did you forget to call subscribe() or psubscribe()?
 ```
+2. In progress, UI unintuitive, since users have to name a file a particular way and have manual input functions
