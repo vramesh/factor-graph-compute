@@ -1,4 +1,4 @@
-# factor-graph-compute
+# Hermes
 ## Setup
 To set up:
 1. install Pipenv: `pip install pipenv`
