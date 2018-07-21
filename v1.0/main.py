@@ -2,6 +2,7 @@ from redis import Redis
 from factor_graph import FactorGraph
 import time
 import subprocess
+import os
 
 r = Redis()
 subprocess.Popen("redis-server")
@@ -20,3 +21,4 @@ fg = FactorGraph(path_to_input_file, config)
 fg.run()
 time.sleep(10)
 fg.print_solution()
+os.system("redis-cli shutdown") #MAC
