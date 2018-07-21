@@ -35,3 +35,5 @@ Traceback (most recent call last):
 RuntimeError: pubsub connection not set: did you forget to call subscribe() or psubscribe()?
 ```
 2. In progress, UI unintuitive, since users have to name a file a particular way and have manual input functions
+3. Pipenv is probably out of date, make list of dependencies through virtualenv testing
+4. get rid of manual countdown
