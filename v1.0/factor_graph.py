@@ -28,6 +28,9 @@ class FactorGraph:
 
 
     def run(self):
+        """
+        runs the factor graph until stop signal is reached
+        """
         for node in self.variable_nodes:
             node.send_initial_messages()
         stop_signal = self.stop_node.get_stop_signal()

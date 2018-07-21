@@ -40,7 +40,7 @@ class RedisBroker:
     def start(self):
         def start_subscriber(subscriber_id):
             while True:
-                message = self.subscribers[subscriber_id]["redis_pubsub"].get_message()
+                message = self.subscribers[subscriber_id]["redis_pubsub"].get_message() #this line is buggy?
                 if message is not None:
                     print("Got message! in " + subscriber_id + " " + str(message))
                 time.sleep(0.001)

@@ -15,13 +15,15 @@ class FactorGraphReader:
 
         all_functions = inspect.getmembers(user_input_functions, inspect.isfunction)
 
+        #user functions
+        #all_functions is tuple of function name with actual function to call
         func_dict = dict()
         for function_tuple in all_functions:
             func_dict[function_tuple[0]] = function_tuple[1]
 
         all_channels = list()
 
-
+        #register variable nodes
         for variable_id in node_dict_var:
             initial_messages_var = dict()
             if variable_id in adjacency_dict_var:
@@ -34,6 +36,7 @@ class FactorGraphReader:
             variable_node = Node(variable_id,"variable",wrapper_var_function,initial_messages_var,node_data,factor_graph.pubsub,outgoing_neighbors, factor_graph.number_of_iter)
             factor_graph.variable_nodes.append(variable_node)
 
+        #register factor nodes
         for factor_id in node_dict_fac:
             initial_messages_fac = dict()
             if factor_id in adjacency_dict_fac:
@@ -67,15 +70,30 @@ class FactorGraphReader:
         return factor_graph
 
     def read_file_factor_graph(path_to_input_file): 
-        adjacency_dict_var = dict() #key: variable index, value: list of factor index
+        '''
+        returns factor graph structure in the form of dictionaries
+
+        adjacency_dict_var: dictionary of variable node ids mapped to 
+                            list of tuples (node_id, initial_incoming_message)
+        adjacency_dict_fac: dictionary of factor node ids mapped to list of neighboring variable node ids
+        outgoing_neighbors_dict:
+        node_dict_var:
+        node_dict_fac:
+        node_function_fac:
+        '''
+        adjacency_dict_var = dict() 
         adjacency_dict_fac = dict()
         outgoing_neighbors_dict = dict()
         node_dict_var = dict()
         node_dict_fac = dict()
         node_function_var = dict() #new
+
+        #parse file
         with open(path_to_input_file) as f:
             all_lines = f.readlines()
             num_lines = len(all_lines)
+
+            #input errors
             if num_lines == 0:
                 raise ValueError("The input factor graph file is empty")
             if all_lines[0].split() != ["Edges"]:
@@ -86,17 +104,21 @@ class FactorGraphReader:
             has_vertices = False
 
             while line_index < num_lines: 
+
+                #parse edges, until "Vertices" header is encountered
                 line = all_lines[line_index]
-                if line.split() == ["Vertices"]: #rn is parsing edges
+                if line.split() == ["Vertices"]: 
                     has_vertices = True
                     break
                 [x,y,initial_incoming_message] = line.split()
-                # initial_incoming_message = float(initial_incoming_message)
+
                 if initial_incoming_message == "None":
                     initial_incoming_message = None
                 else:
-                    initial_incoming_message = ast.literal_eval(initial_incoming_message)  # may be changed to pickle
+                    initial_incoming_message = ast.literal_eval(initial_incoming_message)  
+                    # not sure why AST needed here, may be changed to pickle, clarify with vinny
                 
+
                 if y[0] == "v":
                     add_to_adjacency_dict = adjacency_dict_var
                 elif y[0] == "f":
@@ -109,6 +131,7 @@ class FactorGraphReader:
                 else:
                     add_to_adjacency_dict[y] = [(x,initial_incoming_message)]
 
+                #unclear what outgoing_neighbors_dict does
                 if x not in outgoing_neighbors_dict:
                     outgoing_neighbors_dict[x] = {y:initial_incoming_message}
                 else:
@@ -119,6 +142,7 @@ class FactorGraphReader:
             if not has_vertices:
                 raise ValueError("In input factor graph, first line must be 'Vertices'")
 
+            #parsing vertices here, seems fucked up, should be cleaner
             while line_index < num_lines:
                 line = all_lines[line_index]
                 if len(line.split()) == 3:
