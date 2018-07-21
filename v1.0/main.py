@@ -1,8 +1,10 @@
 from redis import Redis
 from factor_graph import FactorGraph
 import time
+import subprocess
 
 r = Redis()
+subprocess.Popen("redis-server")
 r.flushall()
 
 
