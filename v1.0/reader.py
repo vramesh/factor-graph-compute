@@ -1,4 +1,5 @@
 from node import Node
+from stop_node import StopNode
 from edge import Edge
 from node_update_functions import ALGORITHM_TO_UPDATE_FUNCTIONS
 from redis_callback_class import *
@@ -17,6 +18,9 @@ class FactorGraphReader:
         func_dict = dict()
         for function_tuple in all_functions:
             func_dict[function_tuple[0]] = function_tuple[1]
+
+
+        #all_channels = list()
 
 
         for variable_id in node_dict_var:
@@ -42,20 +46,30 @@ class FactorGraphReader:
             factor_node = Node(factor_id,"factor",wrapper_fac_function,initial_messages_fac,node_data,factor_graph.pubsub,outgoing_neighbors, factor_graph.config["number_of_iter"])
             factor_graph.factor_nodes.append(factor_node)
 
+        #differences here
         for variable_id in adjacency_dict_var:
             for (factor_id,initial_message) in adjacency_dict_var[variable_id]:
                 channel_name = factor_id + "_" + variable_id
+                #all_channels.append(channel_name)
                 edge = Edge(factor_id, variable_id, channel_name, factor_graph.pubsub)
                 factor_graph.edges.append(edge)
 
         for factor_id in adjacency_dict_fac:
             for (variable_id,initial_message) in adjacency_dict_fac[factor_id]:
                 channel_name = variable_id + "_" + factor_id
+                #all_channels.append(channel_name)
                 edge = Edge(variable_id,factor_id, channel_name, factor_graph.pubsub)
                 factor_graph.edges.append(edge)
 
-        #create output overseer node
-
+        #create stop node and subscribe it to all channel
+        
+        #factor_graph.stop_node = StopNode("stop_node", factor_graph.pubsub, factor_graph.time_till_stop)
+        
+        '''
+        for channel_name in all_channels:
+            unused_edge = Edge(None,"stop_node",channel_name,factor_graph.pubsub)
+        '''
+        
         return factor_graph
 
     def read_file_factor_graph(path_to_input_file): 
