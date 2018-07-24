@@ -1,5 +1,4 @@
 from factor_graph import FactorGraph
-import time
 
 config = {
     "algorithm": "sum_product",

@@ -1,7 +1,7 @@
-from setuptools import setup
+from setuptools import setup, setuptools
 
-setup(name='hms',
-      version='0.0.1',
+setup(name='hmslearn',
+      version='0.0.2',
       description='factor graph framework for machine and reinforcement learning',
       url='https://github.com/vramesh/factor-graph-compute',
       author='Andrew Yunta Tsai, Vinayak Ramesh, Devavrat Shah, Suchan Vivatsethachai',
