@@ -1,11 +1,8 @@
 from node import Node
 from stop_node import StopNode
 from edge import Edge
-from node_update_functions import ALGORITHM_TO_UPDATE_FUNCTIONS
 from redis_callback_class import *
 import ast
-import inspect
-import user_input_functions
 
 
 class FactorGraphReader:
@@ -13,14 +10,12 @@ class FactorGraphReader:
         (adjacency_dict_var,adjacency_dict_fac, outgoing_neighbors_dict, node_dict_var, node_dict_fac, node_function_var) =\
          FactorGraphReader.read_file_factor_graph(factor_graph.path_to_input_file) #{1:[2,3]}
 
-        all_functions = inspect.getmembers(user_input_functions, inspect.isfunction)
 
         func_dict = dict()
-        for function_tuple in all_functions:
-            func_dict[function_tuple[0]] = function_tuple[1]
+        for function in factor_graph.function_list:
+            func_dict[function.__name__] = function
 
-
-        #all_channels = list()
+        all_channels = list()
 
 
         for variable_id in node_dict_var:
@@ -50,25 +45,26 @@ class FactorGraphReader:
         for variable_id in adjacency_dict_var:
             for (factor_id,initial_message) in adjacency_dict_var[variable_id]:
                 channel_name = factor_id + "_" + variable_id
-                #all_channels.append(channel_name)
+                all_channels.append(channel_name)
                 edge = Edge(factor_id, variable_id, channel_name, factor_graph.pubsub)
                 factor_graph.edges.append(edge)
 
         for factor_id in adjacency_dict_fac:
             for (variable_id,initial_message) in adjacency_dict_fac[factor_id]:
                 channel_name = variable_id + "_" + factor_id
-                #all_channels.append(channel_name)
+                all_channels.append(channel_name)
                 edge = Edge(variable_id,factor_id, channel_name, factor_graph.pubsub)
                 factor_graph.edges.append(edge)
 
         #create stop node and subscribe it to all channel
         
-        #factor_graph.stop_node = StopNode("stop_node", factor_graph.pubsub, factor_graph.time_till_stop)
+        factor_graph.stop_node = StopNode("stop_node", factor_graph.pubsub, factor_graph.time_till_stop)
         
-        '''
-        for channel_name in all_channels:
-            unused_edge = Edge(None,"stop_node",channel_name,factor_graph.pubsub)
-        '''
+        
+        for channel_name in all_channels: #porblematic
+            unused_edge = Edge(None,"stop_node",channel_name + '_stop_node',factor_graph.pubsub) #problematic
+            factor_graph.edges.append(unused_edge)
+        
         
         return factor_graph
 
