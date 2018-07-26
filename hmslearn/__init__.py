@@ -1,1 +1,1 @@
-from factor_graph import FactorGraph
+from .factor_graph import FactorGraph
