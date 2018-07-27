@@ -7,7 +7,7 @@ from attrdict import AttrDict
 from collections import OrderedDict
 from functools import reduce
 import pdb
-from hmm_factor_functions import y1_observation, y2_observation#, transition_factor_function
+#from hmm_factor_functions import y1_observation, y2_observation#, transition_factor_function
 
 
 def sum_product_update_var(state, messages, sender_id, recipient_id,

@@ -4,7 +4,6 @@ from edge import Edge
 from node_update_functions import ALGORITHM_TO_UPDATE_FUNCTIONS
 from redis_callback_class import *
 import ast
-import inspect
 import user_input_functions
 
 
@@ -13,12 +12,10 @@ class FactorGraphReader:
         (adjacency_dict_var,adjacency_dict_fac, outgoing_neighbors_dict, node_dict_var, node_dict_fac, node_function_var) =\
          FactorGraphReader.read_file_factor_graph(factor_graph.path_to_input_file) #{1:[2,3]}
 
-        all_functions = inspect.getmembers(user_input_functions, inspect.isfunction)
 
         func_dict = dict()
-        for function_tuple in all_functions:
-            func_dict[function_tuple[0]] = function_tuple[1]
-
+        for function in factor_graph.function_list:
+            func_dict[function.__name__] = function
 
         #all_channels = list()
 

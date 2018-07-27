@@ -7,7 +7,7 @@ import subprocess
 
 
 class FactorGraph:
-    def __init__(self, path_to_input_file=None, config={}):
+    def __init__(self, path_to_input_file=None, config={}, function_list=[]):
         r = Redis()
         subprocess.Popen("redis-server")
         time.sleep(1)
@@ -21,6 +21,7 @@ class FactorGraph:
         self.path_to_input_file = path_to_input_file
         self.number_of_iter = config["number_of_iter"]
         self.time_till_stop = config["time_till_stop"]
+        self.function_list = function_list
         self.initialize_nodes_and_edges()
         self.pubsub.start()
         time.sleep(0.1)
