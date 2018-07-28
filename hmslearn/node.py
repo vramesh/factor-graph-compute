@@ -39,16 +39,21 @@ class Node:
     def get_final_state(self, algorithm):
         node_cache = self.state_store.fetch_node(self.node_id, 'messages')
         if algorithm == 'max_product' or algorithm == 'sum_product':
-            print(node_cache)
+            print("node cache", node_cache)
             if len(node_cache.items()) > 1:
+                print("node state store", node_cache.items())
                 un_normalized_probability_vector = np.prod(np.array([message for _, message in
-                    node_cache.items()]), axis=0)
+                    node_cache.items()]), axis=0)     
             else:
                 un_normalized_probability_vector = np.array([message for _,
                     message in node_cache.items()])[0]
-            normalized_probability_vector = \
-            un_normalized_probability_vector/un_normalized_probability_vector.sum()
-            return normalized_probability_vector
+
+            if un_normalized_probability_vector:
+                normalized_probability_vector = \
+                un_normalized_probability_vector/un_normalized_probability_vector.sum()
+                return normalized_probability_vector
+            else:
+                return "something something"
 #            return np.argmax(normalized_probability_vector) 
         else:
             return node_cache

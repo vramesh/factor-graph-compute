@@ -42,11 +42,12 @@ class FactorGraph:
         for node in self.variable_nodes:
             node.send_initial_messages()
 
-        '''
+        
         stop_signal = self.stop_node.get_stop_signal()
         if stop_signal:
+            print("I should get here")
             return True
-        '''
+        
 
         
 
@@ -57,9 +58,10 @@ class FactorGraph:
         return results
 
     def print_solution(self):
-        time.sleep(10)
+        #time.sleep(10) #only uncoment if no stop node
         print("print results")
         for node in self.variable_nodes:
+            print(node.node_id)
             if node.node_id[1]!='0':
                 print(node.node_id, ": ", node.get_final_state(self.algorithm))
         r = Redis()
