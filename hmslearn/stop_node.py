@@ -19,8 +19,8 @@ class StopNode:
 
     def get_stop_signal(self):
         while True:
-            print("sleeping")
-            time.sleep(self.time_till_stop)
-            print("done sleeping")
+            #print("sleeping")
+            #time.sleep(self.time_till_stop)
+            #print("done sleeping")
             if time.time() - self.start_time > self.time_till_stop:
                 return True

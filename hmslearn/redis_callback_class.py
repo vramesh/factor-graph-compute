@@ -8,12 +8,15 @@ class RedisCallbackClass:
     def message_pass_wrapper_for_redis(incoming_message, input_function, pubsub):
         #is the callback functions for redis to run on pubsub
         #message format from redis: {'pattern': None, 'type': 'subscribe', 'channel': 'my-second-channel', 'data': 1L}
+        verbose = False
         
         from_node_id = incoming_message["channel"].decode("ascii").split("_")[0] #this is only redis dependent line
         current_node_id = incoming_message["channel"].decode("ascii").split("_")[1] #this is only redis dependent line
         updated_node_cache, keep_publish = RedisCallbackClass.update_node_cache(incoming_message, current_node_id)
-        
-        print("Got message " + from_node_id + " " + current_node_id + " " + str(pickle.loads(incoming_message["data"])))
+
+        if verbose:
+            print("Got message " + from_node_id + " " + current_node_id + " " + str(pickle.loads(incoming_message["data"])))
+
         if keep_publish:
             stop_countdown = NodeStateStore("redis").fetch_node(current_node_id,"stop_countdown")
             outgoing_neighbors = NodeStateStore("redis").fetch_node(current_node_id,"outgoing_neighbors")

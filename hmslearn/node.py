@@ -27,9 +27,11 @@ class Node:
 
     def send_initial_messages(self):
         # time.sleep(0.1)  # veru crucial, don't know why
+        verbose = False
         for neighbor in self.outgoing_neighbors_with_values:
             channel_id = (self.node_id + "_" + neighbor).encode('ascii') #encode
-            print("publish from " + self.node_id + " to " + neighbor)
+            if verbose:
+                print("publish from " + self.node_id + " to " + neighbor)
             new_outgoing_message = self.outgoing_neighbors_with_values[neighbor]
             RedisCallbackClass.propagate_message(channel_id, new_outgoing_message, self.pubsub)
 
@@ -39,21 +41,15 @@ class Node:
     def get_final_state(self, algorithm):
         node_cache = self.state_store.fetch_node(self.node_id, 'messages')
         if algorithm == 'max_product' or algorithm == 'sum_product':
-            print("node cache", node_cache)
             if len(node_cache.items()) > 1:
-                print("node state store", node_cache.items())
                 un_normalized_probability_vector = np.prod(np.array([message for _, message in
                     node_cache.items()]), axis=0)     
             else:
                 un_normalized_probability_vector = np.array([message for _,
                     message in node_cache.items()])[0]
-
-            if un_normalized_probability_vector:
-                normalized_probability_vector = \
-                un_normalized_probability_vector/un_normalized_probability_vector.sum()
-                return normalized_probability_vector
-            else:
-                return "something something"
-#            return np.argmax(normalized_probability_vector) 
+            normalized_probability_vector = \
+            un_normalized_probability_vector/un_normalized_probability_vector.sum()
+            return normalized_probability_vector
+            #return np.argmax(normalized_probability_vector) #sum product specific, 1's and 0's
         else:
             return node_cache
