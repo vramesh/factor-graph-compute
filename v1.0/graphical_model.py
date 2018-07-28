@@ -42,11 +42,81 @@ class HiddenMarkovModel(GraphicalModel):
                 self.__get_node_type(node_id) is 'sample'}
 
     def write_as_factor_graph(self, observations, file_name):
-        factor_edges = {}
-        factor_nodes = {}
-        for node_id, probability in self.nodes.items():
-            with open(file_name, 'w') as f:
-                pass
+        factor_node_initial_messages = {}
+        factor_graph_vertices = {}
+        with open(file_name, 'w+') as f:
+            f.write('Edges\n')
+            for node_id, probability in self.nodes.items():
+                if self.__get_node_type(node_id) is 'hidden':
+                    variable_node_id = node_id.replace('x', 'v')
+                    if self.__is_initial_hidden_node(node_id):
+                        initial_message = None #self.initial_variable_probability
+                        factor_node_id = None
+                        factor_graph_vertices[variable_node_id] = \
+                        self.initial_variable_probability
+                    else:
+                        initial_message = None
+                        factor_node_id = node_id.replace('x', 'f') + \
+                        str(int(node_id[1:]) - 1)
+                        factor_graph_vertices[variable_node_id] = np.ones(len(self.hidden_alphabet))
+                        
+                    factor_node_initial_messages[node_id] = initial_message
+                    if factor_node_id is not None:
+                        f.write(variable_node_id + ' ' + factor_node_id + \
+                                ' ' + str(initial_message.tolist()).replace(' ','')+ '\n')
+                        f.write(factor_node_id + ' ' + variable_node_id + \
+                                ' ' + \
+                                str(np.ones(len(self.hidden_alphabet)).tolist()).replace(' ', '')+ '\n')
+                        previous_variable_node_id = \
+                        self.__get_previous_hidden_node_id(node_id)
+                        previous_initial_message = \
+                        factor_node_initial_messages[previous_variable_node_id]
+                        f.write(previous_variable_node_id.replace('x', 'v') + ' ' + factor_node_id + ' ' +\
+                                ' ' +\
+                                str(previous_initial_message.tolist()).replace(' ', '')+ '\n')
+                        f.write(factor_node_id + ' ' +\
+                                previous_variable_node_id.replace('x', 'v') + \
+                                ' ' + \
+                                str(np.ones(len(self.hidden_alphabet)).tolist()).replace(' ', '')+ '\n')
+                        factor_graph_vertices[factor_node_id] = \
+                        self.hidden_transition_probability_matrix
+                else:
+                    observation = observations[node_id]
+                    observation_value_index = self.sample_alphabet.index(int(observation))
+                    initial_message = np.zeros(len(self.sample_alphabet))
+                    initial_message[observation_value_index] = 1
+
+                    factor_node_id = node_id.replace('y', 'f') + \
+                    str(int(node_id[1:]))
+                    variable_node_id = node_id.replace('y', 'v0')
+
+                    f.write(variable_node_id + ' ' + factor_node_id + \
+                            ' ' + str(initial_message.tolist()).replace(' ', '') + '\n')
+                    f.write(factor_node_id + ' ' + variable_node_id + \
+                            ' ' + \
+                            str(np.ones(len(self.hidden_alphabet)).tolist()).replace(' ', '')+ '\n')
+                    hidden_variable_node_id = \
+                    self.__get_hidden_node_id_for_sample_node(node_id).replace('x',
+                            'v')
+                    hidden_initial_message = None
+                    f.write(hidden_variable_node_id + ' ' + factor_node_id + \
+                            ' ' + str(hidden_initial_message).replace(' ', '')+ '\n')
+                    f.write(factor_node_id + ' ' + hidden_variable_node_id + \
+                            ' ' + \
+                            str(np.ones(len(self.hidden_alphabet)).tolist()).replace(' ', '')+ '\n')
+                    factor_graph_vertices[variable_node_id] = None 
+                    factor_graph_vertices[factor_node_id] = \
+                    self.sample_probability
+            f.write('Vertices\n')
+            for node_id, probability in factor_graph_vertices.items():
+                if probability is not None:
+                    probability = probability.tolist()
+                f.write(node_id + ' ' + str(probability).replace(' ', '') + '\n')
+
+#            for node_id, probability in self.nodes.items():
+
+#                    observation_conditional_probability = \
+#                    self.sample_probability[observation_value_index]
 
     def convert_to_factor_graph_old(self, observations, file_name):
         factor_node_initial_messages = {}
@@ -82,8 +152,6 @@ class HiddenMarkovModel(GraphicalModel):
                                 str(previous_initial_message.tolist()) + '\n')
                         f.write(factor_node_id + ' ' + previous_variable_node_id + \
                                 str(np.ones(len(self.hidden_alphabet)).tolist()) + '\n')
-                ## create factor node
-                ## create factor node data
 
     def __generate_observation_sample(self, sample_variable_node_id):
         sample_probability = self.nodes[sample_variable_node_id]
