@@ -52,13 +52,20 @@ class RedisBroker:
                 #     print("waiting")
                 time.sleep(0.001)
 
+        distributed = False
         for subscriber_id in self.subscribers:
             process = Thread(target=start_subscriber,
                    args=(subscriber_id,))
-            # process = Process(target=start_subscriber,
-            #         args=(subscriber_id,))
-            process.daemon = True
-            process.start()
+            if distributed:
+                process = Process(target=start_subscriber,
+                     args=(subscriber_id,))
+                process.daemon = True
+                process.start()
+            else:
+                process = Thread(target=start_subscriber,
+                   args=(subscriber_id,))
+                process.daemon = True
+                process.start()
 
 
 
