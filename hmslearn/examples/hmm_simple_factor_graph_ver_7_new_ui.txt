@@ -1,0 +1,27 @@
+Edges
+v01 f11 [0.0,0.0,1.0]
+v02 f22 [1.0,0.0,0.0]
+v03 f33 [1.0,0.0,0.0]
+f11 v1 None
+v1 f12 None
+f12 v1 None
+v2 f12 None
+f12 v2 None
+f22 v2 None
+f33 v3 None
+v2 f23 None
+v3 f23 None
+f23 v2 None
+f23 v3 None
+Vertices
+v01 None sum_product_update_var
+v02 None sum_product_update_var
+v03 None sum_product_update_var
+v1 [0.75,0.25] sum_product_update_var
+v2 [1.0,1.0] sum_product_update_var
+v3 [1.0,1.0] sum_product_update_var
+f11 [[0.9,0.05,0.05],[0.05,0.05,0.9]] sum_product_update_fac
+f22 [[0.9,0.05,0.05],[0.05,0.05,0.9]] sum_product_update_fac
+f33 [[0.9,0.05,0.05],[0.05,0.05,0.9]] sum_product_update_fac
+f12 [[[0.75,0.25],[0.25,0.75]],[[0.75,0.25],[0.25,0.75]]] sum_product_update_fac
+f23 [[[0.75,0.25],[0.25,0.75]],[[0.75,0.25],[0.25,0.75]]] sum_product_update_fac

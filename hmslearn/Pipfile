@@ -1,0 +1,26 @@
+[[source]]
+
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+
+[packages]
+
+numpy = "*"
+pylint = "*"
+mock = "*"
+"autopep8" = "*"
+redis = "*"
+sklearn = "*"
+scipy = "*"
+attrdict = "*"
+
+
+[dev-packages]
+
+
+
+[requires]
+
+#python_version = "3"
