@@ -1,0 +1,38 @@
+Edges
+v0 f0 0
+f0 v0 0.200
+v1 f1 0
+f1 v1 0.200
+v2 f2 0
+f2 v2 0.200
+v3 f3 0
+f3 v3 0.200
+v4 f4 0
+f4 v4 0.200
+v0 f1 0
+f1 v0 0
+v1 f4 0
+f4 v1 0
+v2 f0 0
+f0 v2 0
+v2 f1 0
+f1 v2 0
+v2 f3 0
+f3 v2 0
+v2 f4 0
+f4 v2 0
+v3 f4 0
+f4 v3 0
+v4 f3 0
+f3 v4 0
+Vertices
+v0 1
+v1 1
+v2 4
+v3 1
+v4 1
+f0 0
+f1 0
+f2 0
+f3 0
+f4 0
