@@ -45,7 +45,6 @@ class FactorGraph:
         
         stop_signal = self.stop_node.get_stop_signal()
         if stop_signal:
-            print("I should get here")
             return True
         
 
@@ -59,10 +58,9 @@ class FactorGraph:
 
     def print_solution(self):
         #time.sleep(10) #only uncoment if no stop node
-        print("print results")
+        print("===SOLUTION===")
         for node in self.variable_nodes:
-            print(node.node_id)
-            if node.node_id[1]!='0':
+            if node.node_id[1]!='0' and node.node_id[0]!='f':
                 print(node.node_id, ": ", node.get_final_state(self.algorithm))
         r = Redis()
         r.flushall()
