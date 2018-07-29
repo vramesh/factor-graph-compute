@@ -29,7 +29,7 @@ def factor_node_update_function(state, messages, sender_id, recipient_id,
         from_node_id):
     return "factor node says hi!"
 
-function_list = [sum_product_update_fac, sum_product_update_var, normalize_message]
+function_list = [variable_node_update_function, factor_node_update_function]
 ```
 
 Now make a new file called "graph.txt" and save it in the same directory. This file specifies the structure of the factor graph in the format below. In this file, there are two nodes, v1 and f1, each one having an edge pointing at the other node. The factor node f1 has factor_node_update_function as an update function, same goes for variable node v1. 
