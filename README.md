@@ -23,11 +23,10 @@ def variable_node_update_function(state, messages, sender_id, recipient_id,
         from_node_id):
     return "variable node says hi!"
 
-
-
 def factor_node_update_function(state, messages, sender_id, recipient_id,
         from_node_id):
     return "factor node says hi!"
+
 
 function_list = [variable_node_update_function, factor_node_update_function]
 ```
@@ -66,6 +65,6 @@ fg.print_solution()
 
 ## Features Being Actively Developed
 1. Get asynchronous mode working.
-2. Write benchmarks and unit tests.
+2. Write benchmarks and unit tests for sum and max product.
 3. Expand to CUDA.
 4. Extend algorithms to gradient descent, classical machine learning, etc.
