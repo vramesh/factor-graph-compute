@@ -1,4 +1,17 @@
 # Hermes
+
+Hermes is a framework for machine and reinforcement learning that is optimized for distributed systems and speed. The framework is based on the factor graph data structure used in statistical inference.
+
+## Installation
+
+To install Hermes, simply:
+```
+pip install hmslearn
+```
+
+## Getting Started
+
+
 ## Setup
 To set up:
 1. install Pipenv: `pip install pipenv`
