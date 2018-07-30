@@ -12,13 +12,13 @@ pip install hmslearn
 ## Getting Started
 
 
-```
+```python
 from hmslearn import FactorGraph
 ```
 
 First, define all of the update functions for variable and factor nodes. Make a list containing all update functions.
 
-```
+```python
 def variable_node_update_function(state, messages, sender_id, recipient_id,
         from_node_id):
     return "variable node says hi!"
@@ -43,7 +43,7 @@ f1 None factor_node_update_function
 ```
 Last, we define a config file and make a factor graph object. 
 
-```
+```python
 config = {
     "algorithm": "sum_product",
     "pubsub_choice": "redis",
