@@ -129,7 +129,7 @@ fg.run()
 fg.print_solution()
 ```
 
-Your results should print alongside of the display for redis server, which this package uses. As soong as results are printed, the redis server is closed. 
+Your results should print alongside of the display for redis server, which this package uses. As soon as results are printed, the redis server is closed. 
 
 
 
