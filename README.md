@@ -4,8 +4,8 @@ Hermes is a framework for machine and reinforcement learning that is optimized f
 
 ## Installation
 
-To install Hermes, simply:
-```
+To install Hermes, simply run:
+```shell
 pip install hmslearn
 ```
 
