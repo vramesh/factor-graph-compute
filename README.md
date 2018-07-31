@@ -13,7 +13,7 @@ pip install hmslearn
 
 Let's perform basic sum product using this framework. 
 
-![alt text](https://www.dropbox.com/s/lr2y75pi8om977g/hmm_sum_product.png?dl=0 "Logo Title Text 1")
+![alt text](https://github.com/vramesh/factor-graph-compute/hmm_sum_product.png "HMM Sum Product Algorithm")
 
 
 
