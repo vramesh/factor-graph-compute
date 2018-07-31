@@ -28,6 +28,7 @@ import numpy as np
 Define all of the update functions for variable and factor nodes. Make a list containing all update functions.
 
 ```python
+# helper function for normalizing messages to probability so that the vector sums to 1
 def normalize_message(message):
     return message/message.sum() if message.sum() > 0 else np.array([0.5, 0.5])
 
