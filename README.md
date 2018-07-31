@@ -9,11 +9,13 @@ To install Hermes, simply:
 pip install hmslearn
 ```
 
-## Getting Started
+## Tutorial 
 
 This tutorial performs belief propagation/sum-product message passing on the following graph. Nodes v01, v02, and v03 are either 0 or 1, determined randomly. Nodes v1, v2, and v3 contain values that encompass the probability that v01, v02, and v03 are either 0 or 1. Better explanation of the graph goes here.
 
 ![](https://raw.githubusercontent.com/vramesh/factor-graph-compute/development/hmm_sum_product2.png)
+
+### Getting Started
 
 We start by importing all the necessary packages.
 
