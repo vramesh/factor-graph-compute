@@ -11,7 +11,7 @@ pip install hmslearn
 
 ## Tutorial 
 
-This tutorial performs belief propagation/sum-product message passing on the following graph. Nodes v01, v02, and v03 are either 0 or 1, determined randomly. Nodes v1, v2, and v3 contain values that encompass the probability that v01, v02, and v03 are either 0 or 1. Better explanation of the graph goes here.
+This tutorial performs belief propagation/sum-product message passing for hidden markov models. The graph is shown below. Nodes v01, v02, and v03 are either 0 or 1, determined randomly. Nodes v1, v2, and v3 contain values that encompass the probability that v01, v02, and v03 are either 0 or 1.
 
 ![](https://raw.githubusercontent.com/vramesh/factor-graph-compute/development/hmm_sum_product2.png)
 
@@ -73,7 +73,10 @@ def sum_product_update_fac(state, messages, sender_id, recipient_id,
 function_list = [variable_node_update_function, factor_node_update_function]
 ```
 
-Now make a new file called "graph.txt" and save it in the same directory. This file specifies the structure of the factor graph in the format below. The factor graph shown above translates to the file below.
+Now make a new file called "graph.txt" and save it in the same directory. This file specifies the structure of the factor graph in the format below, as well as the initial message sent (as a vector immediately following the second node). For example, in the file below, there is a unidirectional edge from node v01 to node f11 and the initial message on this edgs is [0.0, 0.0, 1]. 
+
+For vertices, the name of the vertex is first followed by the initial state of the node, followed by the name of the callback function that the vertex will have. For instance, in the file below, node v1 will have the initial state of [0.75, 0.25] and a callback function named sum_product_update_var. Note that this function was included in the function_list array above. 
+
 
 ```
 Edges
