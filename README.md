@@ -109,7 +109,7 @@ def sum_product_update_fac(state, messages, sender_id, recipient_id,
     return outgoing_message
 
 #list of callback functions that will be used
-function_list = [variable_node_update_function, factor_node_update_function]
+function_list = [sum_product_update_fac, sum_product_update_var]
 ```
 Last, we define a config file, make a factor graph object, run it, and acquire our results. 
 
@@ -129,7 +129,7 @@ fg.run()
 fg.print_solution()
 ```
 
-Your results should print alongside of the display for redis server, which this package uses. As soon as results are printed, the redis server is closed. 
+Before you run this file, start the redis server by typing "redis-server" in the command line. Then, execute the script. Your results should print alongside of the display for redis server, which this package uses. As soon as results are printed, the redis server is closed. 
 
 
 
